@@ -1,0 +1,45 @@
+#:kivy 1.10.0
+#:import random random
+
+<DieBasket>
+    size_hint: .9, .25
+    pos_hint: {'x': .05, 'y': .7}
+
+<Base>:
+    die_basket: die_basket
+    Image:
+        source: 'tabletop2.jpg'
+        allow_stretch: True
+        keep_ratio: False
+        Roll:
+            id: roller
+            on_press: dice.update_dice()
+            center_x: root.width * .8
+            top: root.top *.5
+            text: 'Roll'
+            font_size: 70
+            background_color: 1, random.random(), random.random(), 1
+        Keep:
+            id: keep
+            center_x: root.width * .775
+            top: root.top * .3
+            text: 'Keep'
+            font_size: 70
+            background_color: random.random(), 1, random.random(), 1
+    DieBasket:
+        id: die_basket
+        size_hint: .9, .25
+        pos_hint: {'x': .05, 'y': .7}
+        Image:
+            source: 'basket.jpg'
+            allow_stretch: True
+            keep_ratio: False
+            canvas.after:
+                Line:
+                    rectangle: self.x+1,self.y+1,self.width-1,self.height-1
+    Dice:
+        id: dice
+
+<Roll>
+
+<Keep>
