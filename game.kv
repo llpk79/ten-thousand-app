@@ -1,5 +1,7 @@
 #:kivy 1.10.0
 #:import random random
+#:import tables media.tables
+#:import basket media.basket
 
 <DieBasket>
     size_hint: .9, .25
@@ -8,7 +10,7 @@
 <Base>:
     die_basket: die_basket
     Image:
-        source: 'tabletop2.jpg'
+        source: tables[2]
         allow_stretch: True
         keep_ratio: False
         Roll:
@@ -31,7 +33,7 @@
         size_hint: .9, .25
         pos_hint: {'x': .05, 'y': .7}
         Image:
-            source: 'basket.jpg'
+            source: basket
             allow_stretch: True
             keep_ratio: False
             canvas.after:

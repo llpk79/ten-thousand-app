@@ -13,16 +13,8 @@ from kivy.uix.image import Image
 from kivy.core.audio import SoundLoader
 from kivy.properties import ObjectProperty, StringProperty, ListProperty
 import random
+from media import sounds, die_images, tables
 
-
-images = {
-    1: '1_dots.png',
-    2: '2_dots.png',
-    3: '3_dots.png',
-    4: '4_dots.png',
-    5: '5_dots.png',
-    6: '6_dots.png',
-}
 
 
 class Die(Widget):
@@ -46,7 +38,7 @@ class Dice(Widget):
         roll = [random.randint(1, 6) for _ in range(6)]
         self.clear_widgets()
         for x in range(len(roll)):
-            image = Image(source=images[roll[x]])
+            image = Image(source=die_images[roll[x]])
             scatter = Scatter(
                 center_x=self.parent.width * random.uniform(.1, .6),
                 center_y=self.parent.height * random.uniform(.1, .5),
