@@ -16,7 +16,6 @@ import random
 from media import sounds, die_images, tables
 
 
-
 class Die(Widget):
     def __init__(self, **kwargs):
         super(Die, self).__init__(**kwargs)
