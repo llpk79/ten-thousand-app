@@ -3,9 +3,19 @@
 #:import tables media.tables
 #:import basket media.basket
 
+<MenuScreen>:
+    name: 'menu'
+    BoxLayout:
+        Button:
+            text: 'press for game screen'
+            on_press: root.manager.current = 'game'
+        Button:
+            text: 'press me'
+
 <DieBasket>
     size_hint: .9, .25
     pos_hint: {'x': .05, 'y': .7}
+
 
 <Base>:
     die_basket: die_basket
@@ -41,6 +51,10 @@
                     rectangle: self.x+1,self.y+1,self.width-1,self.height-1
     Dice:
         id: dice
+
+<GameScreen>:
+    name: 'game'
+    Base
 
 <Roll>
 

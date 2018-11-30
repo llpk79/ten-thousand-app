@@ -9,12 +9,77 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.widget import Widget
 from kivy.uix.scatter import Scatter
+from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.image import Image
+from kivy.lang import Builder
 from kivy.core.audio import SoundLoader
 from kivy.properties import ObjectProperty, StringProperty, ListProperty
 import random
-from media import sounds, die_images, tables
+from media import sounds, die_images, basket, tables
 
+
+Builder.load_string("""
+<MenuScreen>:
+    name: 'menu'
+    BoxLayout:
+        Button:
+            text: 'press for game screen'
+            on_press: root.manager.current = 'game'
+        Button:
+            text: 'press me'
+
+<DieBasket>
+    size_hint: .9, .25
+    pos_hint: {'x': .05, 'y': .7}
+    size_hint: .9, .25
+    Image:
+        source: 'media/basket.jpg'
+        allow_stretch: True
+        keep_ratio: False
+        canvas.after:
+            Line:
+                rectangle: self.x+1,self.y+1,self.width-1,self.height-1
+<Roll>:
+    id: roller
+    on_press: dice.update_dice()
+    center_x: root.width * .8
+    top: root.top *.5
+    text: 'Roll'
+    font_size: 70
+    background_color: .21, .45, .3, 1
+
+<Keep>:
+    id: keep
+    center_x: root.width * .775
+    top: root.top * .3
+    text: 'Keep'
+    font_size: 70
+    background_color: .75, .41, .03, 1
+
+<Base>:
+    die_basket: die_basket
+    DieBasket:
+        id: die_basket
+    Dice:
+        id: dice
+
+<GameScreen>:
+    name: 'game'
+    Image:
+        source: 'media/tables2.jpg'
+        allow_stretch: True
+        keep_ratio: False
+        Roll:
+        Keep:
+        Base
+""")
+
+class MenuScreen(Screen):
+    pass
+
+
+class GameScreen(Screen):
+    pass
 
 
 class Die(Widget):
@@ -59,7 +124,7 @@ class Roll(Button):
         super(Roll, self).__init__(**kwargs)
 
 
-class Base(FloatLayout):
+class Base(GameScreen):
     die_basket = ObjectProperty()
 
     def __init__(self, **kwargs):
@@ -73,9 +138,15 @@ class DieBasket(BoxLayout):
         super(DieBasket, self).__init__(**kwargs)
 
 
+sm = ScreenManager()
+sm.add_widget(MenuScreen(name='menu'))
+sm.add_widget(GameScreen(name='game'))
+
+
 class Game(App):
+
     def build(self):
-        self.root = root = Base()
+        self.root = root = sm
         return root
 
 
