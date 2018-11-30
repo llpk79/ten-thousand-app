@@ -42,7 +42,7 @@ Builder.load_string("""
             source: 'images/pattern.png'
             allow_stretch: True
             keep_ratio: False
-        
+
         # Button:
         #     text: 'This will be the player name setup screen'
         #     size_hint: (.35, .1)
@@ -123,7 +123,6 @@ class IntroScreen(Screen):
 
 
 class IntInput(TextInput):
-
     pat = re.compile(r'\d')
 
     def insert_text(self, substring, from_undo=False):
@@ -143,12 +142,12 @@ class PlayerNumberScreen(Screen):
 
 
 class Player(object):
-
     """Simple base class for Player objects.
 
     Players have a total score and name.
 
     """
+
     def __init__(self, name):
         """Player objects instantiated with total score and name.
 
@@ -173,10 +172,10 @@ class PlayerNameScreen(Screen):
         player_num = num_players
         for i in range(1, num_players + 1):
             self.add_widget(Label(text=f'Enter Player-{player_num}\'s name:',
-                                  pos_hint={'x': .2, 'y': (i/10) + .35},
+                                  pos_hint={'x': .2, 'y': (i / 10) + .35},
                                   size_hint=(.25, .05)))
             self.add_widget(TextInput(multiline=False,
-                                      pos_hint={'x': .25, 'y': (i/10) + .3},
+                                      pos_hint={'x': .25, 'y': (i / 10) + .3},
                                       size_hint=(.25, .05),
                                       id=f'player{player_num}',
                                       on_text_validate=self.add_player))
@@ -188,6 +187,7 @@ class PlayerNameScreen(Screen):
         if len(self.player_names) == num_players:
             self.parent.current = 'game'
             print(self.parent)
+
 
 class MenuScreen(Screen):
     pass
@@ -230,7 +230,7 @@ class Dice(Widget):
             scatter = Scatter(
                 center_x=self.parent.width * random.uniform(.1, .6),
                 center_y=self.parent.height * random.uniform(.1, .5))
-            new_die = Die(id='die'+str(roll[x]))
+            new_die = Die(id='die' + str(roll[x]))
             new_die.add_widget(image)
             scatter.add_widget(new_die)
             self.add_widget(scatter)

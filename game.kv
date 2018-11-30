@@ -1,61 +1,96 @@
-#:kivy 1.10.0
-#:import random random
-#:import tables media.tables
-#:import basket media.basket
 
-<MenuScreen>:
+<MenuScreen>
     name: 'menu'
-    BoxLayout:
+    FloatLayout:
+        Image:
+            source: 'images/pattern.png'
+            allow_stretch: True
+            keep_ratio: False
         Button:
-            text: 'press for game screen'
-            on_press: root.manager.current = 'game'
-        Button:
-            text: 'press me'
+            text: 'Let\'s play some dice!'
+            size_hint: (.2, .1)
+            pos_hint: {'x': .4, 'y': .45}
+            on_press: root.manager.current = 'number'
+
+
+<PlayerNameScreen>
+    name: 'name'
+    on_enter:  self.on_enter_call(root.manager.screens)
+    FloatLayout:
+        Image:
+            source: 'images/pattern.png'
+            allow_stretch: True
+            keep_ratio: False
+
+        # Button:
+        #     text: 'This will be the player name setup screen'
+        #     size_hint: (.35, .1)
+        #     pos_hint: {'x': .4, 'y': .45}
+        #     on_press: root.manager.current = 'game'
+
+
+<PlayerNumberScreen>
+    name: 'number'
+    # num_players: num_players_input.text
+    FloatLayout:
+        Image:
+            source: 'images/pattern.png'
+            allow_stretch: True
+            keep_ratio: False
+        Label:
+            text: 'How many people are playing?'
+            size_hint: (.2, .05)
+            pos_hint: {'x': .3, 'y': .55}
+        IntInput:
+            id: num_players_input
+            multiline: False
+            on_text_validate: root.call_back(self.text)
+            size_hint: (.3, .05)
+            pos_hint: {'x': .25, 'y': .5}
 
 <DieBasket>
     size_hint: .9, .25
-    pos_hint: {'x': .05, 'y': .7}
+    pos_hint: {'x': .05, 'y': .6}
+    size_hint: .9, .25
+    Image:
+        source: 'images/basket.jpg'
+        allow_stretch: True
+        keep_ratio: False
+        canvas.after:
+            Line:
+                rectangle: self.x+1,self.y+1,self.width-1,self.height-1
+
+<Roll>:
+    size_hint: (.15, .1)
+    pos_hint: {'x': .75, 'y': .4}
+    text: 'Roll'
+    font_size: 50
+    background_color: .21, .45, .3, 1
+
+<Keep>:
+    size_hint: (.15, .1)
+    pos_hint: {'x': .75, 'y': .2}
+    text: 'Keep'
+    font_size: 50
+    background_color: .75, .41, .03, 1
 
 
 <Base>:
-    die_basket: die_basket
     Image:
-        source: tables[2]
+        source: 'images/tabletop2.jpg'
         allow_stretch: True
         keep_ratio: False
-        Roll:
-            id: roller
-            on_press: dice.update_dice()
-            center_x: root.width * .8
-            top: root.top *.5
-            text: 'Roll'
-            font_size: 70
-            background_color: 1, random.random(), random.random(), 1
-        Keep:
-            id: keep
-            center_x: root.width * .775
-            top: root.top * .3
-            text: 'Keep'
-            font_size: 70
-            background_color: random.random(), 1, random.random(), 1
-    DieBasket:
-        id: die_basket
-        size_hint: .9, .25
-        pos_hint: {'x': .05, 'y': .7}
-        Image:
-            source: basket
-            allow_stretch: True
-            keep_ratio: False
-            canvas.after:
-                Line:
-                    rectangle: self.x+1,self.y+1,self.width-1,self.height-1
-    Dice:
-        id: dice
 
-<GameScreen>:
+
+<GameScreen>
     name: 'game'
-    Base
-
-<Roll>
-
-<Keep>
+    Base:
+        die_basket: die_basket
+        id: base
+        DieBasket:
+            id: die_basket
+        Dice:
+            id: dice
+        Keep
+        Roll:
+            on_press: root.ids['dice'].update_dice(len(root.ids['base'].die_basket.keepers))
