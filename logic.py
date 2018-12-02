@@ -44,34 +44,24 @@ class Game:
 
     """
 
-    def __init__(self):
+    def __init__(self, name_list):
         """Begins Game by creating list of Player objects.
 
         Calls Game.set_player.
         """
-        self.player_list = self.set_player()
+        self.player_list = []
+        self.set_player(name_list)
 
-    def set_player(self):
+    def set_player(self, name_list):
         """Sets number of players and player names. Adds computer player if desired.
 
         Instantiates number of Player indicated by user input. Names players as entered by user.
 
         :return: List of Player objects
         """
-        player_list = []
-        while True:
-            try:
-                players = int(input('How many humans are playing?''\n', ))
-                break
-            except ValueError:
-                print('Please enter a number')
-        digi_player = input('Do you want to play against Digital Overlord? y/n''\n')
-        if r'y' in digi_player.lower():
-            player_list.append(ComPlayer('Digital Overlord'))
-        for x in range(1, players + 1):
-            name = input(f'Player {x}, Enter your name:''\n', )
-            player_list.append(HumanPlayer(name))
-        return player_list
+        for name in name_list:
+            self.player_list.append(HumanPlayer(name))
+        return self.player_list
 
     @staticmethod
     def is_three_pair(choice):
@@ -167,6 +157,33 @@ Enter = Roll, K = Keep'''
         winner = winner_dict[max(winner_dict.keys())]
         print(f'\nThe winner is {winner.name} with a score of: {winner.total_score}!!')
 
+    def validate_choice(self, choice):
+        """Removes errant choices and informs user of error(s) if present.
+
+        :param choice: List. User choices before validating
+        :return: List. User choices sans errors."""
+        counts = Counter(choice)
+        if Game.is_three_pair(choice) and \
+                sum(scoring_rules[die - 1][count - 1]
+                    for die, count in counts.items()) < 1500:
+            return choice
+        if Game.is_straight(choice):
+            return choice
+        else:
+            errors = []
+            for die, count in counts.items():
+                if (scoring_rules[die - 1][count - 1] == 0 and
+                        (not Game.is_straight(choice) or sum(scoring_rules[die - 1][count - 1]
+                                                             for die, count in counts.items()) > 0)):
+                    errors.append(die)
+        # for error in errors:
+        #     print(f'\nYou must have three {error}\'s to score. '
+        #           'Let\'s put that back.')
+        # choice = [die for die, count in counts.items()
+        #           for _ in range(count)
+        #           if scoring_rules[die - 1][count - 1] > 0]
+        return errors
+
 
 class Player(object):
 
@@ -181,6 +198,7 @@ class Player(object):
         :param name: From Game.set_player.
         """
         self.total_score = 0
+        self.round_score = 0
         self.name = name
 
 
@@ -231,31 +249,6 @@ Press enter when finished
         choice = [roll[x] for x in choice_list]
         return self._validate_choice(choice)
 
-    def _validate_choice(self, choice):
-        """Removes errant choices and informs user of error(s) if present.
-
-        :param choice: List. User choices before validating
-        :return: List. User choices sans errors."""
-        counts = Counter(choice)
-        if Game.is_three_pair(choice) and \
-                sum(scoring_rules[die - 1][count - 1]
-                    for die, count in counts.items()) < 1500:
-            return choice
-        if Game.is_straight(choice):
-            return choice
-        else:
-            errors = []
-            for die, count in counts.items():
-                if (scoring_rules[die - 1][count - 1] == 0 and not Game.is_straight(choice)
-                        and sum(scoring_rules[die - 1][count - 1] for die, count in counts.items()) > 0):
-                    errors.append(die)
-        for error in errors:
-            print(f'\nYou must have three {error}\'s to score. '
-                  'Let\'s put that back.')
-        choice = [die for die, count in counts.items()
-                  for _ in range(count)
-                  if scoring_rules[die - 1][count - 1] > 0]
-        return choice
 
 
 class ComPlayer(Player):
