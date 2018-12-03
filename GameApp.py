@@ -19,6 +19,7 @@ from kivy.uix.scatter import Scatter
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.image import Image
 
+from collections import deque
 from media import sounds, die_images
 from logic import Game, HumanPlayer, ComPlayer
 
@@ -67,12 +68,10 @@ Builder.load_string("""
             pos_hint: {'x': .25, 'y': .5}
 
 <DieBasket>
-    pic: pic
     # valid_basket: valid_basket
     size_hint: .9, .25
     pos_hint: {'x': .05, 'y': .6}
     Image:
-        id: pic
         source: 'images/basket.jpg'
         allow_stretch: True
         keep_ratio: False
@@ -119,8 +118,10 @@ Builder.load_string("""
             id: dice
         Keep:
             id: keep
+            on_press: root.set_current_player()
         Roll:
             id: roll
+            on_release: root.add_round_score()
 
 """)
 
@@ -184,19 +185,47 @@ class MenuScreen(Screen):
 
 
 class GameScreen(Screen):
-    # TODO: add score boxes
+    active_game = ObjectProperty()
+    list_o_players = deque()
+    current_player = ObjectProperty()
 
-    def get_active_game_players(self):
+    def get_active_game(self):
         for screen in self.parent.screens:
             if screen.name == 'name':
-                return screen.active_game.player_list
+                self.active_game = screen.active_game
+                return self.active_game
+
+    def get_active_game_players(self):
+        for player in self.active_game.player_list:
+            self.list_o_players.append(player)
+        return self.list_o_players
+
+    def set_current_player(self):
+        temp = self.list_o_players.popleft()
+        self.current_player = temp
+        print(self.current_player.name)
+        self.list_o_players.append(temp)
 
     def on_enter(self, *args):
-        players = self.get_active_game_players()
-        for i, player in enumerate(players):
-            self.add_widget(Label(text=f'{player.name} Round Score: 0 Total Score: {player.total_score}',
+        self.get_active_game()
+        self.get_active_game_players()
+        self.set_current_player()
+        for i, player in enumerate(self.list_o_players):
+            self.add_widget(Label(text=self.update_round_score(),
                                   size_hint=(.15, .05),
-                                  pos_hint={'x': .1 + i/3, 'y': .9}))
+                                  pos_hint={'x': .1 + i/3, 'y': .9},
+                                  id=player.name))
+
+    def add_round_score(self):
+        self.current_player.round_score += self.ids['die_basket'].basket_score
+        print('ars', self.current_player.round_score)
+        self.update_round_score()
+
+    def update_round_score(self):
+        print('urs', self.current_player.name, self.current_player.round_score)
+        return f'{self.current_player.name} ' \
+               f'Round Score: {self.current_player.round_score} ' \
+               f'Total Score: {self.current_player.total_score}'
 
 
 class ResultsScreen(Screen):
@@ -217,7 +246,6 @@ class Die(Widget):
                         die_basket.keepers.append(widget)
                     if not widget.collide_widget(die_basket) and widget in die_basket.keepers:
                         die_basket.keepers.remove(widget)
-        # self.parent.parent.parent.die_basket.border_color_changer(self.parent.parent.parent.die_basket.valid_basket)
 
 
 class Dice(Widget):
@@ -270,7 +298,6 @@ class Base(FloatLayout):
 
 
 class DieBasket(BoxLayout):
-    pic = ObjectProperty()
     keepers = ListProperty()
     basket_score = NumericProperty()
     valid_basket = ListProperty()
@@ -288,13 +315,15 @@ class DieBasket(BoxLayout):
         active_game = self.get_active_game()
         children = [child.children for child in self.keepers]
         choice = [int(keeper[0].id) for keeper in children]
-        score = active_game.validate_choice(choice)
-        scored = not bool(score)
+        scored = active_game.validate_choice(choice)
+        scored = not bool(scored)
         if not scored or not choice:
             self.valid_basket = [1, 0, 0, 1]
         if scored and choice:
             self.valid_basket = [0, 1, 0, 1]
-        print(score, self.valid_basket, choice)
+        score = active_game.keep_score(choice)
+        self.basket_score = score
+        print(self.basket_score)
 
 
 sm = ScreenManager()
@@ -304,7 +333,7 @@ sm.add_widget(PlayerNameScreen(name='name'))
 sm.add_widget(GameScreen(name='game'))
 
 
-class Game(App):
+class GameApp(App):
 
     def build(self):
         self.root = root = sm
@@ -312,4 +341,4 @@ class Game(App):
 
 
 if __name__ == '__main__':
-    Game().run()
+    GameApp().run()
