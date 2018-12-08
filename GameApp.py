@@ -50,7 +50,6 @@ Builder.load_string("""
 
 <PlayerNumberScreen>
     name: 'number'
-    # num_players: num_players_input.text
     FloatLayout:
         Image:
             source: 'images/pattern.png'
@@ -103,6 +102,9 @@ Builder.load_string("""
         allow_stretch: True
         keep_ratio: False
 
+<PlayerScore>:
+    size_hint: (.8, .2)
+    pos_hint: {'x': .1, 'y': .8}
 
 <GameScreen>
     name: 'game'
@@ -111,7 +113,10 @@ Builder.load_string("""
         dice: dice
         keep: keep
         roll: roll
+        player_score: player_score
         id: base
+        PlayerScore:
+            id: player_score
         DieBasket:
             id: die_basket
         Dice:
@@ -184,10 +189,22 @@ class MenuScreen(Screen):
     pass
 
 
+class PlayerScore(BoxLayout):
+
+    def __init__(self, **kwargs):
+        super(PlayerScore, self).__init__(**kwargs)
+        self.add_widget(Label(id='name'))
+        self.add_widget(Label(id='round'))
+        self.add_widget((Label(id='total')))
+
+
 class GameScreen(Screen):
     active_game = ObjectProperty()
     list_o_players = deque()
     current_player = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        super(GameScreen, self).__init__(**kwargs)
 
     def get_active_game(self):
         for screen in self.parent.screens:
@@ -203,7 +220,6 @@ class GameScreen(Screen):
     def set_current_player(self):
         temp = self.list_o_players.popleft()
         self.current_player = temp
-        print(self.current_player.name)
         self.list_o_players.append(temp)
 
     def on_enter(self, *args):
@@ -211,21 +227,27 @@ class GameScreen(Screen):
         self.get_active_game_players()
         self.set_current_player()
         for i, player in enumerate(self.list_o_players):
-            self.add_widget(Label(text=self.update_round_score(),
-                                  size_hint=(.15, .05),
-                                  pos_hint={'x': .1 + i/3, 'y': .9},
-                                  id=player.name))
+            new = PlayerScore(size_hint=(.15, .05),
+                              pos_hint={'x': .1 + i/2, 'y': .9},
+                              id=player.name)
+
+            for child in new.children:
+                if child.id == 'name':
+                    child.text = player.name
+                if child.id == 'round':
+                    child.text = str(player.round_score)
+                if child.id == 'total':
+                    child.text = str(player.total_score)
+
+            self.add_widget(new)
 
     def add_round_score(self):
         self.current_player.round_score += self.ids['die_basket'].basket_score
-        print('ars', self.current_player.round_score)
-        self.update_round_score()
-
-    def update_round_score(self):
-        print('urs', self.current_player.name, self.current_player.round_score)
-        return f'{self.current_player.name} ' \
-               f'Round Score: {self.current_player.round_score} ' \
-               f'Total Score: {self.current_player.total_score}'
+        for child in self.children:
+            if child.id == self.current_player.name:
+                for kid in child.children:
+                    if kid.id == 'round':
+                        kid.text = str(int(kid.text) + self.ids['die_basket'].basket_score)
 
 
 class ResultsScreen(Screen):
