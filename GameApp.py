@@ -119,6 +119,7 @@ Builder.load_string("""
             id: player_score
         DieBasket:
             id: die_basket
+            active_game: root.active_game
         Dice:
             id: dice
         Keep:
@@ -127,7 +128,6 @@ Builder.load_string("""
         Roll:
             id: roll
             on_release: root.add_round_score()
-
 """)
 
 
@@ -218,6 +218,8 @@ class GameScreen(Screen):
         return self.list_o_players
 
     def set_current_player(self):
+        if self.current_player is not None:
+            self.current_player.round_score = 0
         temp = self.list_o_players.popleft()
         self.current_player = temp
         self.list_o_players.append(temp)
@@ -226,28 +228,37 @@ class GameScreen(Screen):
         self.get_active_game()
         self.get_active_game_players()
         self.set_current_player()
-        for i, player in enumerate(self.list_o_players):
-            new = PlayerScore(size_hint=(.15, .05),
-                              pos_hint={'x': .1 + i/2, 'y': .9},
-                              id=player.name)
+        score_area = BoxLayout(size_hint=(1, .05),
+                               pos_hint={'x': 0, 'y': .9},
+                               orientation='horizontal',
+                               id='score_area')
+        for player in reversed(self.list_o_players):
+            new = PlayerScore(id=player.name)
 
             for child in new.children:
                 if child.id == 'name':
                     child.text = player.name
+                    child.texture_update()
+                    child.size_hint = (child.texture_size[0] / 30, 1)
                 if child.id == 'round':
-                    child.text = str(player.round_score)
+                    child.text = f'Round: {str(player.round_score)}'
                 if child.id == 'total':
-                    child.text = str(player.total_score)
+                    child.text = f'Total: {str(player.total_score)}'
 
-            self.add_widget(new)
+            score_area.add_widget(new)
+        self.add_widget(score_area)
 
     def add_round_score(self):
-        self.current_player.round_score += self.ids['die_basket'].basket_score
+        curr_basket_score = self.ids['die_basket'].basket_score
+        self.current_player.round_score += curr_basket_score
         for child in self.children:
-            if child.id == self.current_player.name:
+            if child.id == 'score_area':
                 for kid in child.children:
-                    if kid.id == 'round':
-                        kid.text = str(int(kid.text) + self.ids['die_basket'].basket_score)
+                    if kid.id == self.current_player.name:
+                        for imp in kid.children:
+                            if imp.id == 'round':
+                                imp.text = f'Round: {str(self.current_player.round_score)}'
+        self.ids['die_basket'].basket_score = 0
 
 
 class ResultsScreen(Screen):
@@ -323,29 +334,23 @@ class DieBasket(BoxLayout):
     keepers = ListProperty()
     basket_score = NumericProperty()
     valid_basket = ListProperty()
+    active_game = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(DieBasket, self).__init__(**kwargs)
         self.valid_basket = [1, 0, 0, 1]
 
-    def get_active_game(self):
-        for screen in self.parent.parent.parent.screens:
-            if screen.name == 'name':
-                return screen.active_game
-
     def on_keepers(self, instance, value):
-        active_game = self.get_active_game()
         children = [child.children for child in self.keepers]
         choice = [int(keeper[0].id) for keeper in children]
-        scored = active_game.validate_choice(choice)
+        scored = self.active_game.validate_choice(choice)
         scored = not bool(scored)
         if not scored or not choice:
             self.valid_basket = [1, 0, 0, 1]
         if scored and choice:
             self.valid_basket = [0, 1, 0, 1]
-        score = active_game.keep_score(choice)
+        score = self.active_game.keep_score(choice)
         self.basket_score = score
-        print(self.basket_score)
 
 
 sm = ScreenManager()
