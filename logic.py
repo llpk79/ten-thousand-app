@@ -166,15 +166,15 @@ Enter = Roll, K = Keep'''
         if Game.is_three_pair(choice) and \
                 sum(scoring_rules[die - 1][count - 1]
                     for die, count in counts.items()) < 1500:
-            return choice
+            return []
         if Game.is_straight(choice):
-            return choice
+            return []
         else:
             errors = []
             for die, count in counts.items():
-                if (scoring_rules[die - 1][count - 1] == 0 and
-                        (not Game.is_straight(choice) or sum(scoring_rules[die - 1][count - 1]
-                                                             for die, count in counts.items()) > 0)):
+                if (scoring_rules[die - 1][count - 1] == 0 and not
+                        Game.is_straight(choice) and not
+                        Game.is_three_pair(choice)):
                     errors.append(die)
         # for error in errors:
         #     print(f'\nYou must have three {error}\'s to score. '
@@ -182,6 +182,7 @@ Enter = Roll, K = Keep'''
         # choice = [die for die, count in counts.items()
         #           for _ in range(count)
         #           if scoring_rules[die - 1][count - 1] > 0]
+        print(errors)
         return errors
 
 

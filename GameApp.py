@@ -150,8 +150,11 @@ class PlayerNumberScreen(Screen):
     num_players = NumericProperty()
 
     def call_back(self, text):
-        self.num_players = int(text)
-        self.parent.current = 'name'
+        try:
+            self.num_players = int(text)
+            self.parent.current = 'name'
+        except ValueError as e:
+            print(e)
 
 
 class PlayerNameScreen(Screen):
@@ -218,11 +221,13 @@ class GameScreen(Screen):
         return self.list_o_players
 
     def set_current_player(self):
-        if self.current_player is not None:
-            self.current_player.round_score = 0
-        temp = self.list_o_players.popleft()
-        self.current_player = temp
-        self.list_o_players.append(temp)
+        if self.ids['die_basket'].valid_basket:
+            if self.current_player is not None:
+                self.add_round_score()
+                self.update_total_score()
+            temp = self.list_o_players.popleft()
+            self.current_player = temp
+            self.list_o_players.append(temp)
 
     def on_enter(self, *args):
         self.get_active_game()
@@ -249,16 +254,37 @@ class GameScreen(Screen):
         self.add_widget(score_area)
 
     def add_round_score(self):
-        curr_basket_score = self.ids['die_basket'].basket_score
-        self.current_player.round_score += curr_basket_score
-        for child in self.children:
-            if child.id == 'score_area':
-                for kid in child.children:
-                    if kid.id == self.current_player.name:
-                        for imp in kid.children:
-                            if imp.id == 'round':
-                                imp.text = f'Round: {str(self.current_player.round_score)}'
+        if self.ids['die_basket'].valid_basket:
+            curr_basket_score = self.ids['die_basket'].basket_score
+            self.current_player.round_score += curr_basket_score
+        self.update_display('round')
         self.ids['die_basket'].basket_score = 0
+
+    def update_display(self, score_type):
+            for child in self.children:
+                if child.id == 'score_area':
+                    for kid in child.children:
+                        if kid.id == self.current_player.name:
+                            for imp in kid.children:
+                                if imp.id == score_type:
+                                    if score_type == 'round':
+                                        imp.text = f'Round: {str(self.current_player.round_score)}'
+                                    if score_type == 'total':
+                                        imp.text = f'Total: {str(self.current_player.total_score)}'
+
+    def update_total_score(self):
+        if self.ids['die_basket'].valid_basket:
+            if self.current_player.total_score == 0 and self.current_player.round_score < 500:
+                self.current_player.round_score = 0
+
+            if self.current_player.total_score > 0 or self.current_player.round_score > 500:
+                self.current_player.total_score += self.current_player.round_score
+                self.current_player.round_score = 0
+
+        else:
+            self.current_player.round_score = 0
+
+        self.update_display('total')
 
 
 class ResultsScreen(Screen):
