@@ -109,11 +109,11 @@ Builder.load_string("""
 <GameScreen>
     name: 'game'
     Base:
+        player_score: player_score
         die_basket: die_basket
         dice: dice
         end_turn: end_turn
         roll: roll
-        player_score: player_score
         id: base
         PlayerScore:
             id: player_score
@@ -127,7 +127,7 @@ Builder.load_string("""
             on_press: root.set_current_player()
         Roll:
             id: roll
-            on_release: root.add_round_score()
+            on_release: root.update_round_score()
 """)
 
 
@@ -136,7 +136,6 @@ class IntroScreen(Screen):
 
 
 class IntInput(TextInput):
-    # TODO: try/except for invalid input.
     pat = re.compile(r'[1-3]')
 
     def insert_text(self, substring, from_undo=False):
@@ -244,7 +243,7 @@ class GameScreen(Screen):
             score_area.add_widget(new)
         self.add_widget(score_area)
 
-    def add_round_score(self, red=None):
+    def update_round_score(self, red=None):
         if self.ids['die_basket'].valid_basket == [0, 1, 0, 1]:
             curr_basket_score = self.ids['die_basket'].basket_score
             self.current_player.round_score += curr_basket_score
@@ -252,16 +251,21 @@ class GameScreen(Screen):
             self.ids['die_basket'].basket_score = 0
             if not red:
                 self.ids['die_basket'].valid_basket = [1, 0, 0, 1]
+                self.ids['roll'].background_color = [.21, .45, .3, .5]
 
     def update_display(self, score_type):
-            for child in self.children:
+        for child in self.children:
                 if child.id == 'score_area':
                     for kid in child.children:
                         if kid.id == self.current_player.name:
                             for imp in kid.children:
-                                if imp.id == score_type:
+                                if imp.id == 'round':
+                                    if score_type == 'basket':
+                                        imp.text = 'Round: {}'.format(str(self.current_player.round_score +
+                                                                          self.ids['die_basket'].basket_score))
                                     if score_type == 'round':
                                         imp.text = f'Round: {str(self.current_player.round_score)}'
+                                elif imp.id == 'total':
                                     if score_type == 'total':
                                         imp.text = f'Total: {str(self.current_player.total_score)}'
 
@@ -270,7 +274,7 @@ class GameScreen(Screen):
             if self.current_player.total_score == 0 and self.current_player.round_score < 500:
                 self.current_player.round_score = 0
 
-            if self.current_player.total_score > 0 or self.current_player.round_score > 500:
+            if self.current_player.total_score > 0 or self.current_player.round_score >= 500:
                 self.current_player.total_score += self.current_player.round_score
                 self.current_player.round_score = 0
 
@@ -282,13 +286,14 @@ class GameScreen(Screen):
 
     def set_current_player(self):
         if self.current_player is not None:
-            self.add_round_score(red=True)
+            self.update_round_score(red=True)
             self.update_total_score()
             self.current_player.round_score = 0
             self.update_display('round')
             self.ids['die_basket'].keepers.clear()
             self.ids['die_basket'].valid_basket = [1, 0, 0, 1]
             self.ids['roll'].keeper_count = 0
+            self.ids['roll'].background_color = [.21, .45, .3, .5]
         temp = self.list_o_players.popleft()
         self.current_player = temp
         self.list_o_players.append(temp)
@@ -320,7 +325,6 @@ class Dice(Widget):
         super(Dice, self).__init__(**kwargs)
 
     def update_dice(self, num_dice):
-        # TODO: add call to scoring function
         roll = [random.randint(1, 6) for _ in range(6 - num_dice)]
         self.clear_widgets()
         for x in range(len(roll)):
@@ -377,14 +381,17 @@ class DieBasket(BoxLayout):
     def on_keepers(self, instance, value):
         children = [child.children for child in self.keepers]
         choice = [int(keeper[0].id) for keeper in children]
+        score = self.active_game.keep_score(choice)
+        self.basket_score = score
+        self.parent.parent.update_display('basket')
         scored = self.active_game.validate_choice(choice)
         scored = not bool(scored)
         if not scored or not choice:
             self.valid_basket = [1, 0, 0, 1]
+            self.parent.parent.ids['roll'].background_color = [.21, .45, .3, .5]
         if scored and choice:
             self.valid_basket = [0, 1, 0, 1]
-        score = self.active_game.keep_score(choice)
-        self.basket_score = score
+            self.parent.parent.ids['roll'].background_color = [.21, .45, .3, 1]
 
 
 sm = ScreenManager()
