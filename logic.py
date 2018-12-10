@@ -182,7 +182,6 @@ Enter = Roll, K = Keep'''
         # choice = [die for die, count in counts.items()
         #           for _ in range(count)
         #           if scoring_rules[die - 1][count - 1] > 0]
-        print(errors)
         return errors
 
 

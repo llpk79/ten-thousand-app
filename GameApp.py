@@ -82,16 +82,16 @@ Builder.load_string("""
 
 
 <Roll>:
-    size_hint: (.15, .1)
-    pos_hint: {'x': .75, 'y': .4}
     text: 'Roll'
+    size_hint: (.15, .15)
+    pos_hint: {'x': .75, 'y': .4}
     font_size: 50
     background_color: .21, .45, .3, 1
 
-<Keep>:
-    size_hint: (.15, .1)
-    pos_hint: {'x': .75, 'y': .2}
-    text: 'Keep'
+<EndTurn>:
+    text: 'End\\nTurn'
+    size_hint: (.15, .2)
+    pos_hint: {'x': .75, 'y': .15}
     font_size: 50
     background_color: .75, .41, .03, 1
 
@@ -111,7 +111,7 @@ Builder.load_string("""
     Base:
         die_basket: die_basket
         dice: dice
-        keep: keep
+        end_turn: end_turn
         roll: roll
         player_score: player_score
         id: base
@@ -122,8 +122,8 @@ Builder.load_string("""
             active_game: root.active_game
         Dice:
             id: dice
-        Keep:
-            id: keep
+        EndTurn:
+            id: end_turn
             on_press: root.set_current_player()
         Roll:
             id: roll
@@ -220,15 +220,6 @@ class GameScreen(Screen):
             self.list_o_players.append(player)
         return self.list_o_players
 
-    def set_current_player(self):
-        if self.ids['die_basket'].valid_basket:
-            if self.current_player is not None:
-                self.add_round_score()
-                self.update_total_score()
-            temp = self.list_o_players.popleft()
-            self.current_player = temp
-            self.list_o_players.append(temp)
-
     def on_enter(self, *args):
         self.get_active_game()
         self.get_active_game_players()
@@ -253,12 +244,14 @@ class GameScreen(Screen):
             score_area.add_widget(new)
         self.add_widget(score_area)
 
-    def add_round_score(self):
-        if self.ids['die_basket'].valid_basket:
+    def add_round_score(self, red=None):
+        if self.ids['die_basket'].valid_basket == [0, 1, 0, 1]:
             curr_basket_score = self.ids['die_basket'].basket_score
             self.current_player.round_score += curr_basket_score
-        self.update_display('round')
-        self.ids['die_basket'].basket_score = 0
+            self.update_display('round')
+            self.ids['die_basket'].basket_score = 0
+            if not red:
+                self.ids['die_basket'].valid_basket = [1, 0, 0, 1]
 
     def update_display(self, score_type):
             for child in self.children:
@@ -273,7 +266,7 @@ class GameScreen(Screen):
                                         imp.text = f'Total: {str(self.current_player.total_score)}'
 
     def update_total_score(self):
-        if self.ids['die_basket'].valid_basket:
+        if self.ids['die_basket'].valid_basket == [0, 1, 0, 1]:
             if self.current_player.total_score == 0 and self.current_player.round_score < 500:
                 self.current_player.round_score = 0
 
@@ -285,6 +278,20 @@ class GameScreen(Screen):
             self.current_player.round_score = 0
 
         self.update_display('total')
+        self.ids['dice'].update_dice(0)
+
+    def set_current_player(self):
+        if self.current_player is not None:
+            self.add_round_score(red=True)
+            self.update_total_score()
+            self.current_player.round_score = 0
+            self.update_display('round')
+            self.ids['die_basket'].keepers.clear()
+            self.ids['die_basket'].valid_basket = [1, 0, 0, 1]
+            self.ids['roll'].keeper_count = 0
+        temp = self.list_o_players.popleft()
+        self.current_player = temp
+        self.list_o_players.append(temp)
 
 
 class ResultsScreen(Screen):
@@ -327,9 +334,9 @@ class Dice(Widget):
             self.add_widget(scatter)
 
 
-class Keep(Button):
+class EndTurn(Button):
     def __init__(self, **kwargs):
-        super(Keep, self).__init__(**kwargs)
+        super(EndTurn, self).__init__(**kwargs)
 
 
 class Roll(Button):
@@ -339,18 +346,19 @@ class Roll(Button):
         super(Roll, self).__init__(**kwargs)
 
     def on_press(self):
-        self.keeper_count += len(self.parent.die_basket.keepers)
-        if self.keeper_count == 6:
-            self.keeper_count = 0
-        self.parent.dice.update_dice(self.keeper_count)
-        self.parent.die_basket.keepers.clear()
+        if self.parent.die_basket.valid_basket == [0, 1, 0, 1]:
+            self.keeper_count += len(self.parent.die_basket.keepers)
+            if self.keeper_count >= 6:
+                self.keeper_count = 0
+            self.parent.dice.update_dice(self.keeper_count)
+            self.parent.die_basket.keepers.clear()
 
 
 class Base(FloatLayout):
     die_basket = ObjectProperty()
     dice = ObjectProperty()
     roll = ObjectProperty()
-    keep = ObjectProperty()
+    end_turn = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(Base, self).__init__(**kwargs)
@@ -364,7 +372,7 @@ class DieBasket(BoxLayout):
 
     def __init__(self, **kwargs):
         super(DieBasket, self).__init__(**kwargs)
-        self.valid_basket = [1, 0, 0, 1]
+        self.valid_basket = [0, 1, 0, 1]
 
     def on_keepers(self, instance, value):
         children = [child.children for child in self.keepers]
