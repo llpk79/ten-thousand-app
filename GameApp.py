@@ -5,9 +5,9 @@ import re
 kivy.require('1.10.1')
 
 from kivy.app import App
-from kivy.core.audio import SoundLoader
+import kivy.clock
 from kivy.lang import Builder
-from kivy.graphics import *
+import kivy.graphics
 from kivy.properties import ObjectProperty, StringProperty, ListProperty, NumericProperty, BooleanProperty
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
@@ -38,6 +38,24 @@ Builder.load_string("""
             pos_hint: {'x': .4, 'y': .45}
             on_press: root.manager.current = 'number'
 
+<ResultsScreen>
+    name: 'result'
+    FloatLayout:
+        Image:
+            source: 'images/pattern.png'
+            allow_stretch: True
+            keep_ratio: False
+        Button:
+            text: 'Play again?'
+            size_hint: (.15, .05)
+            pos_hint: {'x': .45, 'y': .2}
+            on_press: root.play_again()
+        Button:
+            text: 'Exit'
+            size_hint: (.15, .05)
+            pos_hint: {'x': .45, 'y': .09}
+            on_press: root.exit()
+
 
 <PlayerNameScreen>
     name: 'name'
@@ -65,6 +83,7 @@ Builder.load_string("""
             on_text_validate: root.call_back(self.text)
             size_hint: (.3, .05)
             pos_hint: {'x': .25, 'y': .5}
+            focus: True
 
 <DieBasket>
     # valid_basket: valid_basket
@@ -136,13 +155,13 @@ class IntroScreen(Screen):
 
 
 class IntInput(TextInput):
-    pat = re.compile(r'[1-3]')
+
+    def __init__(self, **kwargs):
+        super(IntInput, self).__init__(**kwargs)
 
     def insert_text(self, substring, from_undo=False):
-        pat = self.pat
-        s = re.match(pat, substring)
-        if s:
-            return super(IntInput, self).insert_text(substring, from_undo=from_undo)
+        if re.match(r'[1-3]', substring):
+            return super(IntInput, self).insert_text(substring, from_undo=False)
 
 
 class PlayerNumberScreen(Screen):
@@ -154,6 +173,19 @@ class PlayerNumberScreen(Screen):
             self.parent.current = 'name'
         except ValueError as e:
             print(e)
+
+
+class FocusInput(TextInput):
+    def __init__(self, **kwargs):
+        super(FocusInput, self).__init__(**kwargs)
+        self.focus = True
+        self.write_tab = False
+
+    def on_focus(self, widget, value):
+        if self.focus:
+            pass
+        elif self.parent and not self.focus:
+            self.parent.add_player(self, value)
 
 
 class PlayerNameScreen(Screen):
@@ -169,26 +201,29 @@ class PlayerNameScreen(Screen):
         num_players = self.get_num_players(screen_list)
         player_num = num_players
         for i in range(1, num_players + 1):
-            self.add_widget(Label(text=f'Enter Player-{player_num}\'s name:',
+            self.add_widget(Label(text=f'Enter Player {player_num}\'s name:',
                                   pos_hint={'x': .2, 'y': (i / 10) + .35},
-                                  size_hint=(.25, .05)))
-            self.add_widget(TextInput(multiline=False,
-                                      pos_hint={'x': .25, 'y': (i / 10) + .3},
-                                      size_hint=(.25, .05),
-                                      id=f'player{player_num}',
-                                      on_text_validate=self.add_player))
+                                  size_hint=(.25, .05),
+                                  id=str(player_num)))
+            self.add_widget(FocusInput(multiline=False,
+                                       pos_hint={'x': .25, 'y': (i / 10) + .3},
+                                       size_hint=(.25, .05)))
             player_num -= 1
 
-    def add_player(self, name):
-        num_players = self.get_num_players(self.parent.screens)
-        self.player_names.append(name.text)
-        if len(self.player_names) == num_players:
-            self.active_game = Game(self.player_names)
-            self.parent.current = 'game'
+    def add_player(self, name, valid):
+        print('beep', name.text, valid)
+        if not valid and name.text != '':
+            num_players = self.get_num_players(self.parent.screens)
+            self.player_names.append(name.text)
+            if len(self.player_names) == num_players:
+                self.active_game = Game(self.player_names)
+                self.parent.current = 'game'
 
 
 class MenuScreen(Screen):
-    pass
+
+    def __init__(self, **kwargs):
+        super(MenuScreen, self).__init__(**kwargs)
 
 
 class PlayerScore(BoxLayout):
@@ -204,6 +239,7 @@ class GameScreen(Screen):
     active_game = ObjectProperty()
     list_o_players = deque()
     current_player = ObjectProperty()
+    list_o_winners = ListProperty()
 
     def __init__(self, **kwargs):
         super(GameScreen, self).__init__(**kwargs)
@@ -227,12 +263,15 @@ class GameScreen(Screen):
                                pos_hint={'x': 0, 'y': .9},
                                orientation='horizontal',
                                id='score_area')
-        for player in reversed(self.list_o_players):
+        for i, player in enumerate(reversed(self.list_o_players)):
             new = PlayerScore(id=player.name)
 
             for child in new.children:
                 if child.id == 'name':
                     child.text = player.name
+                    if i == 0:
+                        child.bold = True
+                        child.font_size = 25
                     child.texture_update()
                     child.size_hint = (child.texture_size[0] / 30, 1)
                 if child.id == 'round':
@@ -244,7 +283,7 @@ class GameScreen(Screen):
         self.add_widget(score_area)
 
     def update_round_score(self, red=None):
-        if self.ids['die_basket'].valid_basket == [0, 1, 0, 1]:
+        if self.ids['die_basket'].valid_basket == [.4, .69, .3, 1]:
             curr_basket_score = self.ids['die_basket'].basket_score
             self.current_player.round_score += curr_basket_score
             self.update_display('round')
@@ -253,7 +292,7 @@ class GameScreen(Screen):
                 self.ids['die_basket'].valid_basket = [1, 0, 0, 1]
                 self.ids['roll'].background_color = [.21, .45, .3, .5]
 
-    def update_display(self, score_type):
+    def update_display(self, score_type, font=None):
         for child in self.children:
                 if child.id == 'score_area':
                     for kid in child.children:
@@ -268,9 +307,16 @@ class GameScreen(Screen):
                                 elif imp.id == 'total':
                                     if score_type == 'total':
                                         imp.text = f'Total: {str(self.current_player.total_score)}'
+                                elif imp.id == 'name':
+                                    if font == 'big':
+                                        imp.font_size = 25
+                                        imp.bold = True
+                                    elif font == 'small':
+                                        imp.font_size = 15
+                                        imp.bold = False
 
     def update_total_score(self):
-        if self.ids['die_basket'].valid_basket == [0, 1, 0, 1]:
+        if self.ids['die_basket'].valid_basket == [.4, .69, .3, 1]:
             if self.current_player.total_score == 0 and self.current_player.round_score < 500:
                 self.current_player.round_score = 0
 
@@ -294,15 +340,45 @@ class GameScreen(Screen):
             self.ids['die_basket'].valid_basket = [1, 0, 0, 1]
             self.ids['roll'].keeper_count = 0
             self.ids['roll'].background_color = [.21, .45, .3, .5]
-        temp = self.list_o_players.popleft()
-        self.current_player = temp
-        self.list_o_players.append(temp)
+            self.update_display('name', 'small')
+        if not any([player.total_score > 2000 for player in self.list_o_players]):
+            temp = self.list_o_players.popleft()
+            self.current_player = temp
+            self.update_display('name', 'big')
+            self.list_o_players.append(temp)
+        else:
+            self.list_o_winners.append(self.current_player)
+            self.current_player = self.list_o_players.popleft()
+            self.update_display('name', 'big')
+            if not self.list_o_players:
+                self.parent.current = 'result'
 
 
 class ResultsScreen(Screen):
-    # TODO: add results
-    pass
+    winners = ListProperty()
 
+    def __init__(self, **kwargs):
+        super(ResultsScreen, self).__init__(**kwargs)
+
+    def get_winners(self):
+        for screen in self.parent.screens:
+            if screen.name == 'game':
+                self.winners = screen.list_o_winners
+
+    def on_enter(self, *args):
+        self.get_winners()
+        winners = sorted(self.winners, key=lambda x: x.total_score, reverse=True)
+        self.add_widget(Label(text=f'{winners[0].name} wins !!\n\nWith {winners[0].total_score} points!',
+                              font_size=40,
+                              bold=True,
+                              size_hint=(.5, .5),
+                              pos_hint={'x': .25, 'y': .35}))
+
+    def play_again(self):
+        pass
+
+    def exit(self):
+        pass
 
 class Die(Widget):
     def __init__(self, **kwargs):
@@ -327,6 +403,8 @@ class Dice(Widget):
     def update_dice(self, num_dice):
         roll = [random.randint(1, 6) for _ in range(6 - num_dice)]
         self.clear_widgets()
+        sound = sounds[random.randint(1, 6)]
+        sound.play()
         for x in range(len(roll)):
             image = Image(source=die_images[roll[x]])
             scatter = Scatter(
@@ -350,7 +428,7 @@ class Roll(Button):
         super(Roll, self).__init__(**kwargs)
 
     def on_press(self):
-        if self.parent.die_basket.valid_basket == [0, 1, 0, 1]:
+        if self.parent.die_basket.valid_basket == [.4, .69, .3, 1]:
             self.keeper_count += len(self.parent.die_basket.keepers)
             if self.keeper_count >= 6:
                 self.keeper_count = 0
@@ -376,7 +454,7 @@ class DieBasket(BoxLayout):
 
     def __init__(self, **kwargs):
         super(DieBasket, self).__init__(**kwargs)
-        self.valid_basket = [0, 1, 0, 1]
+        self.valid_basket = [.4, .69, .3, 1]
 
     def on_keepers(self, instance, value):
         children = [child.children for child in self.keepers]
@@ -390,7 +468,7 @@ class DieBasket(BoxLayout):
             self.valid_basket = [1, 0, 0, 1]
             self.parent.parent.ids['roll'].background_color = [.21, .45, .3, .5]
         if scored and choice:
-            self.valid_basket = [0, 1, 0, 1]
+            self.valid_basket = [.4, .69, .3, 1]
             self.parent.parent.ids['roll'].background_color = [.21, .45, .3, 1]
 
 
@@ -399,6 +477,7 @@ sm.add_widget(MenuScreen(name='menu'))
 sm.add_widget(PlayerNumberScreen(name='number'))
 sm.add_widget(PlayerNameScreen(name='name'))
 sm.add_widget(GameScreen(name='game'))
+sm.add_widget(ResultsScreen(name='result'))
 
 
 class GameApp(App):
