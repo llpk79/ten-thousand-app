@@ -1,97 +1,145 @@
-#: kivy 1.10.1
+#:kivy 1.10.1
+#: import ScreenManager kivy.uix.screenmanager.ScreenManager
+#: import Screen kivy.uix.screenmanager.ScreenManager
+
+
+ScreenManager:
+    id: screen_manager
+    MenuScreen:
+        id: menu
+        name: 'menu'
+        manager: 'screen_manager'
+    PlayerNumberScreen:
+        id: player_number
+        name: 'number'
+        manager: 'screen_manager'
+    PlayerNameScreen:
+        id: name
+        name: 'name'
+        manager: 'screen_manager'
+    GameScreen:
+        id: game
+        name: 'game'
+        manager: 'screen_manager'
+    ResultsScreen:
+        id: results
+        name: 'results'
+        manager: 'screen_manager'
 
 <MenuScreen>
     name: 'menu'
     FloatLayout:
         Image:
-            source: 'images/pattern.png'
+            source: 'images/tabletop5.jpg'
             allow_stretch: True
             keep_ratio: False
         Button:
             text: 'Let\'s play some dice!'
             size_hint: (.2, .1)
             pos_hint: {'x': .4, 'y': .45}
-            on_press: root.manager.current = 'number'
+            on_press: root.parent.current = 'number'
 
+<ResultsScreen>
+    name: 'results'
+    FloatLayout:
+        Image:
+            source: 'images/tabletop1.jpg'
+            allow_stretch: True
+            keep_ratio: False
+        Button:
+            text: 'Play again?'
+            size_hint: (.15, .05)
+            pos_hint: {'x': .45, 'y': .2}
+            on_press: root.play_again()
+        Button:
+            text: 'Exit'
+            size_hint: (.15, .05)
+            pos_hint: {'x': .45, 'y': .09}
+            on_press: root.exit()
 
 <PlayerNameScreen>
     name: 'name'
-    on_enter:  self.on_enter_call(root.manager.screens)
     FloatLayout:
         Image:
-            source: 'images/pattern.png'
+            source: 'images/tabletop4.jpg'
             allow_stretch: True
             keep_ratio: False
-
-        # Button:
-        #     text: 'This will be the player name setup screen'
-        #     size_hint: (.35, .1)
-        #     pos_hint: {'x': .4, 'y': .45}
-        #     on_press: root.manager.current = 'game'
-
 
 <PlayerNumberScreen>
     name: 'number'
-    # num_players: num_players_input.text
     FloatLayout:
         Image:
-            source: 'images/pattern.png'
+            source: 'images/tabletop3.jpg'
             allow_stretch: True
             keep_ratio: False
         Label:
-            text: 'How many people are playing?'
+            text: 'How many people are playing?\nUp to three can play.'
             size_hint: (.2, .05)
-            pos_hint: {'x': .3, 'y': .55}
+            pos_hint: {'x': .27, 'y': .575}
         IntInput:
             id: num_players_input
             multiline: False
             on_text_validate: root.call_back(self.text)
             size_hint: (.3, .05)
             pos_hint: {'x': .25, 'y': .5}
+            focus: True
 
 <DieBasket>
     size_hint: .9, .25
     pos_hint: {'x': .05, 'y': .6}
-    size_hint: .9, .25
     Image:
         source: 'images/basket.jpg'
         allow_stretch: True
         keep_ratio: False
         canvas.after:
+            Color:
+                rgba: root.valid_basket
             Line:
-                rectangle: self.x+1,self.y+1,self.width-1,self.height-1
+                rectangle: self.x - 1, self.y - 1, self.width + 2, self.height + 2
 
-<Roll>:
-    size_hint: (.15, .1)
-    pos_hint: {'x': .75, 'y': .4}
+<Roll>
     text: 'Roll'
+    size_hint: (.15, .15)
+    pos_hint: {'x': .75, 'y': .4}
     font_size: 50
     background_color: .21, .45, .3, 1
 
-<Keep>:
-    size_hint: (.15, .1)
-    pos_hint: {'x': .75, 'y': .2}
-    text: 'Keep'
+<EndTurn>
+    text: 'End\nTurn'
+    size_hint: (.15, .2)
+    pos_hint: {'x': .75, 'y': .15}
     font_size: 50
     background_color: .75, .41, .03, 1
 
-
-<Base>:
+<Base>
     Image:
         source: 'images/tabletop2.jpg'
         allow_stretch: True
         keep_ratio: False
 
+<PlayerScore>
+    size_hint: (.8, .2)
+    pos_hint: {'x': .1, 'y': .8}
 
 <GameScreen>
     name: 'game'
     Base:
+        player_score: player_score
         die_basket: die_basket
+        dice: dice
+        end_turn: end_turn
+        roll: roll
         id: base
+        PlayerScore:
+            id: player_score
         DieBasket:
             id: die_basket
+            active_game: root.active_game
         Dice:
             id: dice
-        Keep
+        EndTurn:
+            id: end_turn
+            on_press: root.set_current_player()
         Roll:
-            on_press: root.ids['dice'].update_dice(len(root.ids['base'].die_basket.keepers))
+            id: roll
+            on_release: root.update_round_score()

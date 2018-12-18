@@ -5,7 +5,7 @@ import re
 
 kivy.require('1.10.1')
 
-import kivy.graphics
+from kivy.graphics import *
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
 from kivy.clock import Clock
@@ -24,128 +24,6 @@ from kivy.uix.image import Image
 from collections import deque
 from media import sounds, die_images
 from logic import Game
-
-
-Builder.load_string("""
-<MenuScreen>
-    name: 'menu'
-    FloatLayout:
-        Image:
-            source: 'images/tabletop5.jpg'
-            allow_stretch: True
-            keep_ratio: False
-        Button:
-            text: 'Let\\'s play some dice!'
-            size_hint: (.2, .1)
-            pos_hint: {'x': .4, 'y': .45}
-            on_press: root.manager.current = 'number'
-
-<ResultsScreen>
-    name: 'result'
-    FloatLayout:
-        Image:
-            source: 'images/tabletop1.jpg'
-            allow_stretch: True
-            keep_ratio: False
-        Button:
-            text: 'Play again?'
-            size_hint: (.15, .05)
-            pos_hint: {'x': .45, 'y': .2}
-            on_press: root.play_again()
-        Button:
-            text: 'Exit'
-            size_hint: (.15, .05)
-            pos_hint: {'x': .45, 'y': .09}
-            on_press: root.exit()
-
-<PlayerNameScreen>
-    name: 'name'
-    FloatLayout:
-        Image:
-            source: 'images/tabletop4.jpg'
-            allow_stretch: True
-            keep_ratio: False
-
-<PlayerNumberScreen>
-    name: 'number'
-    FloatLayout:
-        Image:
-            source: 'images/tabletop3.jpg'
-            allow_stretch: True
-            keep_ratio: False
-        Label:
-            text: 'How many people are playing?\\nUp to three can play.'
-            size_hint: (.2, .05)
-            pos_hint: {'x': .27, 'y': .575}
-        IntInput:
-            id: num_players_input
-            multiline: False
-            on_text_validate: root.call_back(self.text)
-            size_hint: (.3, .05)
-            pos_hint: {'x': .25, 'y': .5}
-            focus: True
-
-<DieBasket>
-    # valid_basket: valid_basket
-    size_hint: .9, .25
-    pos_hint: {'x': .05, 'y': .6}
-    Image:
-        source: 'images/basket.jpg'
-        allow_stretch: True
-        keep_ratio: False
-        canvas.after:
-            Color: 
-                rgba: root.valid_basket
-            Line:
-                rectangle: self.x - 1, self.y - 1, self.width + 2, self.height + 2
-
-<Roll>:
-    text: 'Roll'
-    size_hint: (.15, .15)
-    pos_hint: {'x': .75, 'y': .4}
-    font_size: 50
-    background_color: .21, .45, .3, 1
-
-<EndTurn>:
-    text: 'End\\nTurn'
-    size_hint: (.15, .2)
-    pos_hint: {'x': .75, 'y': .15}
-    font_size: 50
-    background_color: .75, .41, .03, 1
-
-<Base>:
-    Image:
-        source: 'images/tabletop2.jpg'
-        allow_stretch: True
-        keep_ratio: False
-
-<PlayerScore>:
-    size_hint: (.8, .2)
-    pos_hint: {'x': .1, 'y': .8}
-
-<GameScreen>
-    name: 'game'
-    Base:
-        player_score: player_score
-        die_basket: die_basket
-        dice: dice
-        end_turn: end_turn
-        roll: roll
-        id: base
-        PlayerScore:
-            id: player_score
-        DieBasket:
-            id: die_basket
-            active_game: root.active_game
-        Dice:
-            id: dice
-        EndTurn:
-            id: end_turn
-            on_press: root.set_current_player()
-        Roll:
-            id: roll
-            on_release: root.update_round_score()
-""")
 
 
 class IntInput(TextInput):
@@ -273,7 +151,7 @@ class GameScreen(Screen):
             self.update_display('name', 'big')
 
             if not self.list_o_players:
-                self.parent.current = 'result'
+                self.parent.current = 'results'
 
     def update_round_score(self, red=None):
         if self.ids['die_basket'].valid_basket == [.4, .69, .3, 1]:
@@ -519,19 +397,21 @@ class DieBasket(BoxLayout):
             self.parent.parent.ids['roll'].background_color = [.21, .45, .3, 1]
 
 
-sm = ScreenManager()
-sm.add_widget(MenuScreen(name='menu'))
-sm.add_widget(PlayerNumberScreen(name='number'))
-sm.add_widget(PlayerNameScreen(name='name'))
-sm.add_widget(GameScreen(name='game'))
-sm.add_widget(ResultsScreen(name='result'))
+class Screens(ScreenManager):
+    def __init__(self, **kwargs):
+        super(Screens, self).__init__(**kwargs)
+        self.add_widget(MenuScreen(name='menu'))
+        self.add_widget(PlayerNumberScreen(name='number'))
+        self.add_widget(PlayerNameScreen(name='name'))
+        self.add_widget(GameScreen(name='game'))
+        self.add_widget(ResultsScreen(name='results'))
+        self.current = 'menu'
 
 
 class GameApp(App):
 
     def build(self):
-        self.root = root = sm
-        return root
+        return self.root
 
 
 if __name__ == '__main__':
