@@ -2,6 +2,8 @@
 import kivy
 import random
 import re
+import math
+import time
 
 kivy.require('1.10.1')
 
@@ -24,7 +26,8 @@ from kivy.uix.image import Image
 from collections import deque
 from media import sounds, die_images
 from logic import Game
-
+from pydice import DicePhysics
+from pymunk import Body
 
 class IntInput(TextInput):
     def __init__(self, **kwargs):
@@ -307,33 +310,54 @@ class DieScatter(Scatter):
 
 
 class Dice(Widget):
+    dice_sim = ObjectProperty()
+
     def __init__(self, **kwargs):
         super(Dice, self).__init__(**kwargs)
         self.id = 'dice'
+        self.die_dict = {}
+        self.dice_sim = DicePhysics()
 
     def update_dice(self, num_dice):
+        print()
         roll = [random.randint(1, 6) for _ in range(6 - num_dice)]
         self.clear_widgets()
+        for die in self.dice_sim.space.shapes:
+            if isinstance(die, Body):
+                self.dice_sim.space.remove(die.body)
+                self.dice_sim.space.remove(die)
 
         sound = sounds[random.randint(1, 6)]
         sound.play()
 
-        for x in range(len(roll)):
+        for i, x in enumerate(range(len(roll))):
             image = Image(source=die_images[roll[x]])
             scatter = DieScatter(
-                center_x=self.parent.width * .75,
-                center_y=self.parent.height * .1,
                 id=str(roll[x]))
             scatter.add_widget(image)
             self.add_widget(scatter)
-
-        for child in self.parent.children:
-            if child.id == 'dice':
-                for kid in child.children:
-                    anim = Animation(center_x=self.parent.width * random.uniform(.1, .6),
-                                     center_y=self.parent.height * random.uniform(.1, .5),
-                                     d=.25)
-                    anim.start(kid)
+            self.die_dict[i] = scatter
+        self.dice_sim.add_dice(6 - num_dice)
+        self.dice_sim.start_dice()
+        self.dice_sim.roll_dice()
+        # pos_angles = []
+        # for _ in range(len(self.dice_sim.body_dict)):
+        #     pos_angles.append(list())
+        # while all([abs(body.velocity.int_tuple[1]) > 0 for body in self.dice_sim.body_dict.values()]):
+        #     self.dice_sim.space.step(0.2)
+        #     time.sleep(0.2)
+        #     for i, box in enumerate(self.dice_sim.body_dict.values()):
+        #         pos_angles[i].append((box.position, box.angle))
+        # while pos_angles[-1]:
+        #     time.sleep(.2)
+        #     print('boop', len(pos_angles[-1]))
+        #     for i, die in enumerate(self.children):
+        #         pa = pos_angles[i].pop()
+        #         anim = Animation(pos=(pa[0][0] * 5, pa[0][1] * 5))
+        #         anim &= Animation(rotation=pa[1] * 180/math.pi, duration=0.2)
+        #         anim.start(die)
+                # die.pos = (pa[0][0] * 5, pa [0][1] * 5)
+                # die.rotation = pa[1] * 180 / math.pi
 
 
 class EndTurn(Button):
