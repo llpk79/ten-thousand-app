@@ -311,59 +311,28 @@ class DieScatter(Scatter):
 
 
 class Dice(Widget):
-    dice_sim = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(Dice, self).__init__(**kwargs)
         self.id = 'dice'
-        self.die_dict = {}
-        self.dice_sim = DicePhysics()
 
     def update_dice(self, num_dice):
-        print()
+        positions = [{'x': 0.15, 'y': 0.15}, {'x': 0.18, 'y': 0.28}, {'x': 0.13, 'y': 0.47},
+                     {'x': 0.45, 'y': 0.12}, {'x': 0.41, 'y': 0.25}, {'x': 0.48, 'y': 0.45}]
         roll = [random.randint(1, 6) for _ in range(6 - num_dice)]
         self.clear_widgets()
-        for die in self.dice_sim.space.shapes:
-            if isinstance(die, Body):
-                self.dice_sim.space.remove(die.body)
-                self.dice_sim.space.remove(die)
 
         sound = sounds[random.randint(1, 6)]
         sound.play()
 
-        for x, box in zip(roll, self.dice_sim.body_dict.values()):
+        for x, pos in zip(roll, positions[:num_dice + 1]):
             image = Image(source=die_images[x])
             scatter = DieScatter(id=str(x),
-                                 pos=(box.position.int_tuple[0],
-                                      box.position.int_tuple[1]))
+                                 pos_hint=pos,
+                                 size_hint=(.7, .7),
+                                 rotation=random.randint(-360, 360))
             scatter.add_widget(image)
             self.add_widget(scatter)
-        self.dice_sim.add_dice(6 - num_dice)
-        self.dice_sim.start_dice()
-        # self.dice_sim.space.step(0.1)
-        self.dice_sim.roll_dice()
-        # pos_angles = []
-        # for _ in range(len(self.dice_sim.body_dict)):
-        #     pos_angles.append(list())
-        print([abs(body.velocity.int_tuple[1]) > 0 for body in self.dice_sim.body_dict.values()])
-        while any([abs(body.velocity.int_tuple[1]) > 0 for body in self.dice_sim.body_dict.values()]):
-            self.dice_sim.space.step(0.2)
-            # time.sleep(0.2)
-            for die, box in zip(self.children, self.dice_sim.body_dict.values()):
-                die.center_x = box.position[0] * 3
-                die.center_y = box.position[1] * 3
-                die.rotate = box.angle * 180 / math.pi
-
-        # while pos_angles[-1]:
-        #     time.sleep(.2)
-        #     print('boop', len(pos_angles[-1]))
-        #     for i, die in enumerate(self.children):
-        #         pa = pos_angles[i].pop()
-        #         anim = Animation(pos=(pa[0][0] * 5, pa[0][1] * 5))
-        #         anim &= Animation(rotation=pa[1] * 180/math.pi, duration=0.2)
-        #         anim.start(die)
-                # die.pos = (pa[0][0] * 5, pa [0][1] * 5)
-                # die.rotation = pa[1] * 180 / math.pi
 
 
 class EndTurn(Button):
