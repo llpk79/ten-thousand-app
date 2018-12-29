@@ -1,7 +1,8 @@
 # Copyright 2018 Paul Kutrich. All rights reserved.
 #:kivy 1.10.1
 #: import ScreenManager kivy.uix.screenmanager.ScreenManager
-#: import Screen kivy.uix.screenmanager.ScreenManager
+#: import colors colors.colors
+#: import rgba kivy.utils.rgba
 
 
 ScreenManager:
@@ -31,14 +32,21 @@ ScreenManager:
     name: 'menu'
     FloatLayout:
         Image:
-            source: 'images/tabletop5.jpg'
+            source: 'images/tabletop6.jpg'
             allow_stretch: True
             keep_ratio: False
-        Button:
+        Label:
             text: 'Let\'s play some dice!'
+            color: rgba(colors['text'])
             size_hint: (.2, .1)
-            pos_hint: {'x': .4, 'y': .45}
-            on_press: root.parent.current = 'number'
+            pos_hint: {'x': 0.4, 'y': 0.475}
+            on_touch_down: root.parent.current = 'number'
+            canvas.before:
+                Color:
+                    rgba: rgba(colors['prime'])
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
 
 <ResultsScreen>
     name: 'results'
@@ -66,6 +74,17 @@ ScreenManager:
             allow_stretch: True
             keep_ratio: False
 
+<ButtonLabel>
+    font_size: 50
+    color: rgba(colors['text'])
+    on_touch_up: root.parent.current = 'name'
+    canvas.before:
+        Color:
+            rgba: rgba(colors['prime'])
+        Rectangle:
+            pos: self.pos
+            size: (self.size[0] + 5, self.size[1] + 5)
+
 <PlayerNumberScreen>
     name: 'number'
     FloatLayout:
@@ -75,15 +94,26 @@ ScreenManager:
             keep_ratio: False
         Label:
             text: 'How many people are playing?\nUp to three can play.'
-            size_hint: (.2, .05)
-            pos_hint: {'x': .27, 'y': .575}
-        IntInput:
-            id: num_players_input
-            multiline: False
-            on_text_validate: root.call_back(self.text)
-            size_hint: (.3, .05)
-            pos_hint: {'x': .25, 'y': .5}
-            focus: True
+            halign: 'center'
+            font_size: 40
+            color: rgba(colors['text'])
+            size_hint: (.275, .075)
+            pos_hint: {'x': .35, 'y': .7}
+        ButtonLabel:
+            text: 'Just Me!'
+            pos_hint: {'x': .15, 'y': .425}
+            size_hint: (.25, .075)
+            on_touch_down: root.set_num_players(1)
+        ButtonLabel:
+            text: 'You and Me!'
+            pos_hint: {'x': .525, 'y': .425}
+            size_hint: (.35, .075)
+            on_touch_down: root.set_num_players(2)
+        ButtonLabel:
+            text: 'We Three!'
+            pos_hint: {'x': .32, 'y': .3}
+            size_hint: (.3, .075)
+            on_touch_down: root.set_num_players(3)
 
 <DieBasket>
     size_hint: .9, .25
@@ -99,18 +129,30 @@ ScreenManager:
                 rectangle: self.x - 1, self.y - 1, self.width + 2, self.height + 2
 
 <Roll>
-    text: 'Roll'
-    size_hint: (.15, .15)
-    pos_hint: {'x': .75, 'y': .4}
-    font_size: 50
-    background_color: .21, .45, .3, 1
+    text: 'Roll \'em!'
+    color: rgba(colors['text'])
+    size_hint: (.2, .1)
+    pos_hint: {'x': .15, 'y': .05}
+    font_size: 35
+    canvas.before:
+        Color:
+            rgba: rgba(colors['prime'])
+        Rectangle:
+            pos: self.pos[0] + 7, self.pos[1] + 7
+            size: self.texture_size[0] + 10, self.texture_size[1] + 5
 
 <EndTurn>
-    text: 'End\nTurn'
-    size_hint: (.15, .2)
-    pos_hint: {'x': .75, 'y': .15}
-    font_size: 50
-    background_color: .75, .41, .03, 1
+    text: 'Keep/End Turn'
+    color: rgba(colors['text'])
+    size_hint: (.325, .1)
+    pos_hint: {'x': .45, 'y': .05}
+    font_size: 35
+    canvas.before:
+        Color:
+            rgba: rgba(colors['prime'])
+        Rectangle:
+            pos: self.pos[0] + 7, self.pos[1] + 7
+            size: self.texture_size[0] + 10, self.texture_size[1] + 5
 
 <Base>
     Image:
@@ -119,8 +161,14 @@ ScreenManager:
         keep_ratio: False
 
 <PlayerScore>
-    size_hint: (.8, .2)
-    pos_hint: {'x': .1, 'y': .8}
+    size_hint: (1, 0.15)
+    pos_hint: {'x': 0., 'y': .9}
+    canvas:
+        Color:
+            rgba: rgba(colors['prime dark'])
+        Rectangle:
+            pos: self.pos
+            size: self.size
 
 <GameScreen>
     name: 'game'
@@ -140,7 +188,5 @@ ScreenManager:
             id: dice
         EndTurn:
             id: end_turn
-            on_press: root.set_current_player()
         Roll:
             id: roll
-            on_release: root.update_round_score()
