@@ -1,0 +1,10 @@
+colors = {'prime': '#60b4f4',
+          'prime light': '#97e6ff',
+          'prime off': '#e1f5fe',
+          'prime dark': '#1985c1',
+          'second': '#ffee58',
+          'second light': '#ffff8b',
+          'second dark': '#c9bc1f',
+          'text': '#000000',
+          'error': '#B00020',
+          'valid': '#33691e'}
