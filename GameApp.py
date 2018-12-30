@@ -87,11 +87,7 @@ class PlayerNameScreen(Screen):
                           pos_hint={'x': .2, 'y': (i / 10) + .45},
                           size_hint=(.25, .05),
                           id=str(player_num))
-            with label.canvas:
-                Color(rgba(colors['prime']))
-
             self.add_widget(label)
-
             self.add_widget(FocusInput(multiline=False,
                                        pos_hint={'x': .25, 'y': (i / 10) + .4},
                                        size_hint=(.25, .05)))
@@ -140,7 +136,7 @@ class GameScreen(Screen):
             self.update_display('round')
             self.ids['die_basket'].keepers.clear()
             self.ids['die_basket'].valid_basket = rgba(colors['error'])
-            self.ids['roll'].keeper_count = 0
+            self.ids['roll'].keeper_count.clear()
             self.ids['roll'].background_color = rgba(colors['prime off'])
             self.update_display('name', 'small')
 
@@ -169,7 +165,7 @@ class GameScreen(Screen):
                 self.ids['die_basket'].valid_basket = rgba(colors['error'])
                 self.ids['roll'].background_color = rgba(colors['prime off'])
 
-    def update_display(self, score_type, font=None):
+    def update_display(self, score_type, font_size=None):
         for child in self.children:
                 if child.id == 'score_area':
                     for kid in child.children:
@@ -191,12 +187,12 @@ class GameScreen(Screen):
                                         imp.text = f'Total: {str(self.current_player.total_score)}'
 
                                 elif imp.id == 'name':
-                                    if font == 'big':
+                                    if font_size == 'big':
                                         imp.color = rgba(colors['text'])
                                         imp.font_size = 32
                                         imp.bold = True
 
-                                    elif font == 'small':
+                                    elif font_size == 'small':
                                         imp.color = rgba(colors['text'])
                                         imp.font_size = 20
                                         imp.bold = False
@@ -214,7 +210,7 @@ class GameScreen(Screen):
             self.current_player.round_score = 0
 
         self.update_display('total')
-        self.ids['dice'].update_dice(0)
+        self.ids['dice'].update_dice(6, turn=True)
 
     def on_enter(self, *args):
         self.get_active_game()
@@ -311,10 +307,20 @@ class DieScatter(Scatter):
         if touch.grab_current is self:
             self.scale -= .1
             die_basket = self.parent.parent.die_basket
-            if self.collide_widget(die_basket) and self not in die_basket.keepers:
-                die_basket.keepers.append(self)
-            if not self.collide_widget(die_basket) and self in die_basket.keepers:
-                die_basket.keepers.remove(self)
+            keepers = die_basket.keepers
+            keeper_count = self.parent.parent.roll.keeper_count
+            if self.collide_widget(die_basket) and self not in keepers:
+                keepers.append(self)
+                for i, child in enumerate(die_basket.keeper_box.children):
+                    if i == (len(keepers) + len(keeper_count)) - 1:
+                        anim = Animation(pos=(child.pos[0] + 20, child.pos[1]), d=0.5, t='out_quart')
+                        if self.rotation <= 180:
+                            anim &= Animation(rotation=0, d=0.5)
+                        else:
+                            anim &= Animation(rotation=360, d=0.5)
+                        anim.start(self)
+            if not self.collide_widget(die_basket) and self in keepers:
+                keepers.remove(self)
             touch.ungrab(self)
 
 
@@ -324,16 +330,19 @@ class Dice(Widget):
         super(Dice, self).__init__(**kwargs)
         self.id = 'dice'
 
-    def update_dice(self, num_dice):
+    def update_dice(self, num_dice, turn=False):
         positions = [((490, 540), (215, 270)), ((245, 285), (230, 260)), ((50, 70), (236, 265)), ((60, 90), (85, 120)),
                      ((235, 275), (85, 130)), ((500, 550), (80, 120))]
-        roll = [randint(1, 6) for _ in range(6 - num_dice)]
-        self.clear_widgets()
+        roll = [randint(1, 6) for _ in range(num_dice)]
+        if not turn:
+            self.clear_widgets([widget for widget in self.children if widget not in self.parent.roll.keeper_count])
+        else:
+            self.clear_widgets()
 
         # sound = sounds[random.randint(1, 6)]
         # sound.play()
 
-        for x, pos in zip(roll, positions[:(6 - num_dice) + 1]):
+        for x, pos in zip(roll, positions[:num_dice + 1]):
             scatter = DieScatter(id=str(x), scale=0.75)
             image = Image(source=die_images[x])
             scatter.add_widget(image)
@@ -356,7 +365,7 @@ class EndTurn(Label):
 
 
 class Roll(Label):
-    keeper_count = NumericProperty(0)
+    keeper_count = ListProperty()
 
     def __init__(self, **kwargs):
         super(Roll, self).__init__(**kwargs)
@@ -364,14 +373,15 @@ class Roll(Label):
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             touch.grab(self)
-            if self.parent.die_basket.valid_basket == rgba(colors['valid']):
-                self.keeper_count += len(self.parent.die_basket.keepers)
+            die_basket = self.parent.die_basket
+            if die_basket.valid_basket == rgba(colors['valid']):
+                for keeper in die_basket.keepers:
+                    self.keeper_count.append(keeper)
 
-                if self.keeper_count >= 6:
-                    self.keeper_count = 0
-
-                self.parent.dice.update_dice(self.keeper_count)
-                self.parent.die_basket.keepers.clear()
+                if len(self.keeper_count) >= 6:
+                    self.keeper_count.clear()
+                self.parent.dice.update_dice(6 - len(self.keeper_count))
+                die_basket.keepers.clear()
 
             self.parent.parent.update_round_score()
             touch.ungrab(self)
@@ -388,11 +398,17 @@ class Base(FloatLayout):
         super(Base, self).__init__(**kwargs)
 
 
-class DieBasket(BoxLayout):
+class DieHolder(Widget):
+    def __init__(self, **kwargs):
+        super(DieHolder, self).__init__(**kwargs)
+
+
+class DieBasket(FloatLayout):
     keepers = ListProperty()
     basket_score = NumericProperty()
     valid_basket = ListProperty()
     active_game = ObjectProperty()
+    keeper_box = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(DieBasket, self).__init__(**kwargs)
@@ -408,13 +424,20 @@ class DieBasket(BoxLayout):
         scored = self.active_game.validate_choice(choice)
         scored = not bool(scored)
 
+        roll = self.parent.parent.ids['roll']
         if not scored or not choice:
             self.valid_basket = rgba(colors['error'])
-            self.parent.parent.ids['roll'].background_color = rgba(colors['prime off'])
+            with roll.canvas.before:
+                Color(rgba=rgba(colors['prime off']))
+                Rectangle(pos=(roll.pos[0] + 7, roll.pos[1] + 7),
+                          size=(roll.texture_size[0] + 10, roll.texture_size[1] + 5))
 
         if scored and choice:
             self.valid_basket = rgba(colors['valid'])
-            self.parent.parent.ids['roll'].background_color = rgba(colors['prime'])
+            with roll.canvas.before:
+                Color(rgba=rgba(colors['prime']))
+                Rectangle(pos=(roll.pos[0] + 7, roll.pos[1] + 7),
+                          size=(roll.texture_size[0] + 10, roll.texture_size[1] + 5))
 
 
 class Screens(ScreenManager):
