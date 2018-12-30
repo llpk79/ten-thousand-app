@@ -115,24 +115,49 @@ ScreenManager:
             size_hint: (.3, .075)
             on_touch_down: root.set_num_players(3)
 
+<DieHolder>
+
 <DieBasket>
-    size_hint: .9, .25
-    pos_hint: {'x': .05, 'y': .6}
-    Image:
-        source: 'images/basket.jpg'
-        allow_stretch: True
-        keep_ratio: False
-        canvas.after:
-            Color:
-                rgba: root.valid_basket
-            Line:
-                rectangle: self.x - 1, self.y - 1, self.width + 2, self.height + 2
+    keeper_box: keeper_box
+    size_hint: 1, 0.4
+    pos_hint: {'x': 0.0, 'y': 0.6}
+    canvas.after:
+        Color:
+            rgba: root.valid_basket
+        Rectangle:
+            pos: self.x, self.y
+            size: self.width, self.x + 2
+    Label:
+        text: 'Put Keepers Up Here'
+        font_size: 18
+        bold: True
+        color: rgba(colors['text'])
+        halign: 'center'
+        pos_hint: {'x': self.x, 'y': -.425}
+    BoxLayout:
+        id: keeper_box
+        pos_hint: {'x': 0, 'y': 0.33}
+        size_hint: 1, 0.4
+        padding: [5]
+        spacing: 5
+        DieHolder:
+            id: '1'
+        DieHolder:
+            id: '2'
+        DieHolder:
+            id: '3'
+        DieHolder:
+            id: '4'
+        DieHolder:
+            id: '5'
+        DieHolder:
+            id: '6'
 
 <Roll>
     text: 'Roll \'em!'
     color: rgba(colors['text'])
-    size_hint: (.2, .1)
-    pos_hint: {'x': .15, 'y': .05}
+    size_hint: (0.2, 0.1)
+    pos_hint: {'x': 0.15, 'y': 0.05}
     font_size: 35
     canvas.before:
         Color:
