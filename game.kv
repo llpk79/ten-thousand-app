@@ -117,6 +117,8 @@ ScreenManager:
 
 <DieHolder>
 
+<KeeperBox>
+
 <DieBasket>
     keeper_box: keeper_box
     size_hint: 1, 0.4
@@ -134,7 +136,7 @@ ScreenManager:
         color: rgba(colors['text'])
         halign: 'center'
         pos_hint: {'x': self.x, 'y': -.425}
-    BoxLayout:
+    KeeperBox:
         id: keeper_box
         pos_hint: {'x': 0, 'y': 0.33}
         size_hint: 1, 0.4
@@ -197,6 +199,7 @@ ScreenManager:
 
 <GameScreen>
     name: 'game'
+    base: base
     Base:
         player_score: player_score
         die_basket: die_basket

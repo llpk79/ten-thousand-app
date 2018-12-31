@@ -131,13 +131,14 @@ class GameScreen(Screen):
     def set_current_player(self):
         if self.current_player is not None:
             self.update_round_score(red=True)
+            self.base.die_basket.valid_basket = rgba(colors['valid'])
             self.update_total_score()
             self.current_player.round_score = 0
             self.update_display('round')
-            self.ids['die_basket'].keepers.clear()
-            self.ids['die_basket'].valid_basket = rgba(colors['error'])
-            self.ids['roll'].keeper_count.clear()
-            self.ids['roll'].background_color = rgba(colors['prime off'])
+            self.base.die_basket.keepers.clear()
+            self.base.roll.update_color()
+            self.base.roll.keeper_count.clear()
+            self.base.dice.clear_widgets()
             self.update_display('name', 'small')
 
         if not any([player.total_score >= 2000 for player in self.list_o_players]):
@@ -155,15 +156,15 @@ class GameScreen(Screen):
                 self.parent.current = 'results'
 
     def update_round_score(self, red=None):
-        if self.ids['die_basket'].valid_basket == rgba(colors['valid']):
-            curr_basket_score = self.ids['die_basket'].basket_score
+        if self.base.die_basket.valid_basket == rgba(colors['valid']):
+            curr_basket_score = self.base.die_basket.basket_score
             self.current_player.round_score += curr_basket_score
             self.update_display('round')
-            self.ids['die_basket'].basket_score = 0
+            self.base.die_basket.basket_score = 0
 
             if not red:
-                self.ids['die_basket'].valid_basket = rgba(colors['error'])
-                self.ids['roll'].background_color = rgba(colors['prime off'])
+                self.base.die_basket.valid_basket = rgba(colors['error'])
+                self.base.roll.background_color = rgba(colors['prime off'])
 
     def update_display(self, score_type, font_size=None):
         for child in self.children:
@@ -210,7 +211,6 @@ class GameScreen(Screen):
             self.current_player.round_score = 0
 
         self.update_display('total')
-        self.ids['dice'].update_dice(6, turn=True)
 
     def on_enter(self, *args):
         self.get_active_game()
@@ -252,6 +252,11 @@ class GameScreen(Screen):
         self.add_widget(score_area)
 
 
+class KeeperBox(BoxLayout):
+    def __init__(self, **kwargs):
+        super(KeeperBox, self).__init__(**kwargs)
+
+
 class ResultsScreen(Screen):
     winners = ListProperty()
 
@@ -287,9 +292,12 @@ class DieScatter(Scatter):
     def __init__(self, **kwargs):
         super(DieScatter, self).__init__(**kwargs)
         self.trigger = Clock.create_trigger(self.update_pos)
+        self.locked = False
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
+            if self.locked:
+                return True
             self.scale += .1
             touch.grab(self)
             self.touch = touch
@@ -309,18 +317,21 @@ class DieScatter(Scatter):
             die_basket = self.parent.parent.die_basket
             keepers = die_basket.keepers
             keeper_count = self.parent.parent.roll.keeper_count
+            die_holders = die_basket.keeper_box.children
             if self.collide_widget(die_basket) and self not in keepers:
                 keepers.append(self)
-                for i, child in enumerate(die_basket.keeper_box.children):
-                    if i == (len(keepers) + len(keeper_count)) - 1:
-                        anim = Animation(pos=(child.pos[0] + 20, child.pos[1]), d=0.5, t='out_quart')
-                        if self.rotation <= 180:
-                            anim &= Animation(rotation=0, d=0.5)
-                        else:
-                            anim &= Animation(rotation=360, d=0.5)
-                        anim.start(self)
+                die_holder = die_holders[(len(keepers) + len(keeper_count)) - 1]
+                anim = Animation(pos=(die_holder.pos[0] + 20, die_holder.pos[1]), d=0.5, t='out_quart')
+                if self.rotation <= 180:
+                    anim &= Animation(rotation=0, d=0.5)
+                else:
+                    anim &= Animation(rotation=360, d=0.5)
+                anim.start(self)
             if not self.collide_widget(die_basket) and self in keepers:
                 keepers.remove(self)
+                for die_holder, keeper in zip(die_holders[len(keeper_count):], keepers):
+                    anim = Animation(pos=(die_holder.pos[0] + 20, die_holder.pos[1]), d=0.2)
+                    anim.start(keeper)
             touch.ungrab(self)
 
 
@@ -374,18 +385,41 @@ class Roll(Label):
         if self.collide_point(*touch.pos):
             touch.grab(self)
             die_basket = self.parent.die_basket
+
             if die_basket.valid_basket == rgba(colors['valid']):
                 for keeper in die_basket.keepers:
                     self.keeper_count.append(keeper)
-
                 if len(self.keeper_count) >= 6:
                     self.keeper_count.clear()
                 self.parent.dice.update_dice(6 - len(self.keeper_count))
-                die_basket.keepers.clear()
 
             self.parent.parent.update_round_score()
+
+            for keeper in self.keeper_count:
+                keeper.locked = True
+
+            for keeper in die_basket.keepers:
+                with keeper.canvas.after:
+                    Color(.9, .9, .9, .5)
+                    Rectangle(pos=(keeper.pos[0] + 2, keeper.pos[1] + 7),
+                              size=(keeper.children[0].size[0] - 25, keeper.children[0].size[1] - 25))
+            die_basket.keepers.clear()
             touch.ungrab(self)
+            self.update_color()
             return True
+
+    def update_color(self):
+        if self.parent.die_basket.valid_basket == rgba(colors['error']):
+            with self.canvas.before:
+                Color(rgba=rgba(colors['prime off']))
+                Rectangle(pos=(self.pos[0] + 7, self.pos[1] + 7),
+                          size=(self.texture_size[0] + 10, self.texture_size[1] + 5))
+
+        elif self.parent.die_basket.valid_basket == rgba(colors['valid']):
+            with self.canvas.before:
+                Color(rgba=rgba(colors['prime']))
+                Rectangle(pos=(self.pos[0] + 7, self.pos[1] + 7),
+                          size=(self.texture_size[0] + 10, self.texture_size[1] + 5))
 
 
 class Base(FloatLayout):
@@ -424,7 +458,7 @@ class DieBasket(FloatLayout):
         scored = self.active_game.validate_choice(choice)
         scored = not bool(scored)
 
-        roll = self.parent.parent.ids['roll']
+        roll = self.parent.roll
         if not scored or not choice:
             self.valid_basket = rgba(colors['error'])
             with roll.canvas.before:
