@@ -42,6 +42,9 @@ class ButtonLabel(Label):
 class PlayerNumberScreen(Screen):
     num_players = ObjectProperty()
 
+    def __init__(self, **kwargs):
+        super(PlayerNumberScreen, self).__init__(**kwargs)
+
     def set_num_players(self, num_players):
         self.num_players = num_players
         self.parent.current = 'name'
@@ -63,6 +66,9 @@ class PlayerNameScreen(Screen):
     player_names = ListProperty()
     active_game = ObjectProperty()
     num_players = NumericProperty()
+
+    def __init__(self, **kwargs):
+        super(PlayerNameScreen, self).__init__(**kwargs)
 
     def get_num_players(self):
         for screen in self.parent.screens:
@@ -108,11 +114,21 @@ class PlayerScore(BoxLayout):
         self.add_widget((Label(id='total')))
 
 
+class ScoreArea(BoxLayout):
+    def __init__(self, **kwargs):
+        super(ScoreArea, self).__init__(**kwargs)
+
+        self.size_hint = (1, .1)
+        self.pos_hint = {'x': 0, 'y': .9}
+        self.id = 'score_area'
+
+
 class GameScreen(Screen):
     active_game = ObjectProperty()
     list_o_players = deque()
     current_player = ObjectProperty()
     list_o_winners = ListProperty()
+    base = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(GameScreen, self).__init__(**kwargs)
@@ -131,14 +147,14 @@ class GameScreen(Screen):
     def set_current_player(self):
         if self.current_player is not None:
             self.update_round_score(red=True)
-            self.base.die_basket.valid_basket = rgba(colors['valid'])
             self.update_total_score()
+            self.base.die_basket.valid_basket = rgba(colors['valid'])
             self.current_player.round_score = 0
-            self.update_display('round')
             self.base.die_basket.keepers.clear()
             self.base.roll.update_color()
             self.base.roll.keeper_count.clear()
             self.base.dice.clear_widgets()
+            self.update_display('round')
             self.update_display('name', 'small')
 
         if not any([player.total_score >= 2000 for player in self.list_o_players]):
@@ -156,47 +172,60 @@ class GameScreen(Screen):
                 self.parent.current = 'results'
 
     def update_round_score(self, red=None):
-        if self.base.die_basket.valid_basket == rgba(colors['valid']):
-            curr_basket_score = self.base.die_basket.basket_score
-            self.current_player.round_score += curr_basket_score
+        die_basket = self.base.die_basket
+        if die_basket.valid_basket == rgba(colors['valid']):
+            self.current_player.round_score += die_basket.basket_score
             self.update_display('round')
-            self.base.die_basket.basket_score = 0
+            die_basket.basket_score = 0
 
             if not red:
-                self.base.die_basket.valid_basket = rgba(colors['error'])
+                die_basket.valid_basket = rgba(colors['error'])
                 self.base.roll.background_color = rgba(colors['prime off'])
 
+        die_basket.basket_score = 0
+
     def update_display(self, score_type, font_size=None):
-        for child in self.children:
-                if child.id == 'score_area':
-                    for kid in child.children:
-                        if kid.id == self.current_player.name:
-                            for imp in kid.children:
+        for player_area in self.base.score_area.children:
+            if player_area.id == self.current_player.name:
+                for score_area in player_area.children:
 
-                                if imp.id == 'round':
-                                    if score_type == 'basket':
-                                        imp.color = rgba(colors['text'])
-                                        imp.text = 'Round: {}'.format(str(self.current_player.round_score +
-                                                                          self.ids['die_basket'].basket_score))
-                                    if score_type == 'round':
-                                        imp.color = rgba(colors['text'])
-                                        imp.text = f'Round: {str(self.current_player.round_score)}'
+                    if score_area.id == 'round':
+                        if font_size == 'big':
+                            score_area.bold = True
+                        elif font_size == 'small':
+                            score_area.bold = False
 
-                                elif imp.id == 'total':
-                                    if score_type == 'total':
-                                        imp.color = rgba(colors['text'])
-                                        imp.text = f'Total: {str(self.current_player.total_score)}'
+                        if score_type == 'basket':
+                            score_area.font_size = 22
+                            score_area.color = rgba(colors['text'])
+                            score_area.text = 'Round: {}'.format(str(self.current_player.round_score +
+                                                                     self.ids['die_basket'].basket_score))
+                        if score_type == 'round':
+                            score_area.font_size = 22
+                            score_area.color = rgba(colors['text'])
+                            score_area.text = f'Round: {str(self.current_player.round_score)}'
 
-                                elif imp.id == 'name':
-                                    if font_size == 'big':
-                                        imp.color = rgba(colors['text'])
-                                        imp.font_size = 32
-                                        imp.bold = True
+                    elif score_area.id == 'total':
+                        if font_size == 'big':
+                            score_area.bold = True
+                        elif font_size == 'small':
+                            score_area.bold = False
 
-                                    elif font_size == 'small':
-                                        imp.color = rgba(colors['text'])
-                                        imp.font_size = 20
-                                        imp.bold = False
+                        if score_type == 'total':
+                            score_area.font_size = 22
+                            score_area.color = rgba(colors['text'])
+                            score_area.text = f'Total: {str(self.current_player.total_score)}'
+
+                    elif score_area.id == 'name':
+                        if font_size == 'big':
+                            score_area.color = rgba(colors['text'])
+                            score_area.font_size = 32
+                            score_area.bold = True
+
+                        elif font_size == 'small':
+                            score_area.color = rgba(colors['text'])
+                            score_area.font_size = 22
+                            score_area.bold = False
 
     def update_total_score(self):
         if self.ids['die_basket'].valid_basket == rgba(colors['valid']):
@@ -217,16 +246,12 @@ class GameScreen(Screen):
         self.get_active_game_players()
         self.set_current_player()
 
-        score_area = BoxLayout(size_hint=(1, .05),
-                               pos_hint={'x': 0, 'y': .9},
-                               orientation='horizontal',
-                               id='score_area')
-
         for i, player in enumerate(reversed(self.list_o_players)):
             new = PlayerScore(id=player.name)
 
             for child in new.children:
                 if child.id == 'name':
+                    child.halign = 'left'
                     child.text = player.name
                     child.color = rgba(colors['text'])
 
@@ -234,22 +259,25 @@ class GameScreen(Screen):
                         child.bold = True
                         child.font_size = 32
                     else:
-                        child.font_size = 20
-                    child.texture_update()
-                    child.size_hint = (child.texture_size[0] / 30, 1)
+                        child.font_size = 22
 
                 if child.id == 'round':
-                    child.font_size = 20
-                    child.color = rgba(colors['text'])
+                    child.halign = 'left'
                     child.text = f'Round: {str(player.round_score)}'
+                    child.color = rgba(colors['text'])
+                    child.font_size = 22
+                    if i == 0:
+                        child.bold = True
 
                 if child.id == 'total':
-                    child.font_size = 20
-                    child.color = rgba(colors['text'])
+                    child.halign = 'right'
                     child.text = f'Total: {str(player.total_score)}'
+                    child.color = rgba(colors['text'])
+                    child.font_size = 22
+                    if i == 0:
+                        child.bold = True
 
-            score_area.add_widget(new)
-        self.add_widget(score_area)
+            self.base.score_area.add_widget(new)
 
 
 class KeeperBox(BoxLayout):
@@ -274,6 +302,7 @@ class ResultsScreen(Screen):
 
         self.add_widget(Label(text=f'{winners[0].name} wins !!\n\nWith {winners[0].total_score} points!',
                               color=rgba(colors['text']),
+                              halign='center',
                               font_size=40,
                               bold=True,
                               size_hint=(.5, .5),
@@ -291,7 +320,7 @@ class DieScatter(Scatter):
 
     def __init__(self, **kwargs):
         super(DieScatter, self).__init__(**kwargs)
-        self.trigger = Clock.create_trigger(self.update_pos)
+
         self.locked = False
 
     def on_touch_down(self, touch):
@@ -306,32 +335,38 @@ class DieScatter(Scatter):
     def on_touch_move(self, touch):
         if touch.grab_current is self:
             self.to_widget(*touch.pos)
-            self.trigger()
+            self.update_pos(touch)
 
     def update_pos(self, thing):
         self.pos = (self.pos[0] + self.touch.dpos[0], self.pos[1] + self.touch.dpos[1])
 
     def on_touch_up(self, touch):
         if touch.grab_current is self:
-            self.scale -= .1
             die_basket = self.parent.parent.die_basket
             keepers = die_basket.keepers
             keeper_count = self.parent.parent.roll.keeper_count
             die_holders = die_basket.keeper_box.children
+
+            self.scale -= .1
+
             if self.collide_widget(die_basket) and self not in keepers:
                 keepers.append(self)
                 die_holder = die_holders[(len(keepers) + len(keeper_count)) - 1]
+
                 anim = Animation(pos=(die_holder.pos[0] + 20, die_holder.pos[1]), d=0.5, t='out_quart')
                 if self.rotation <= 180:
                     anim &= Animation(rotation=0, d=0.5)
                 else:
                     anim &= Animation(rotation=360, d=0.5)
                 anim.start(self)
-            if not self.collide_widget(die_basket) and self in keepers:
+
+            elif not self.collide_widget(die_basket) and self in keepers:
                 keepers.remove(self)
+
                 for die_holder, keeper in zip(die_holders[len(keeper_count):], keepers):
                     anim = Animation(pos=(die_holder.pos[0] + 20, die_holder.pos[1]), d=0.2)
                     anim.start(keeper)
+
             touch.ungrab(self)
 
 
@@ -339,12 +374,10 @@ class Dice(Widget):
 
     def __init__(self, **kwargs):
         super(Dice, self).__init__(**kwargs)
+
         self.id = 'dice'
 
     def update_dice(self, num_dice, turn=False):
-        positions = [((490, 540), (215, 270)), ((245, 285), (230, 260)), ((50, 70), (236, 265)), ((60, 90), (85, 120)),
-                     ((235, 275), (85, 130)), ((500, 550), (80, 120))]
-        roll = [randint(1, 6) for _ in range(num_dice)]
         if not turn:
             self.clear_widgets([widget for widget in self.children if widget not in self.parent.roll.keeper_count])
         else:
@@ -352,6 +385,10 @@ class Dice(Widget):
 
         # sound = sounds[random.randint(1, 6)]
         # sound.play()
+
+        positions = [((490, 540), (215, 270)), ((245, 285), (230, 260)), ((50, 70), (236, 265)), ((60, 90), (85, 120)),
+                     ((235, 275), (85, 130)), ((500, 550), (80, 120))]
+        roll = [randint(1, 6) for _ in range(num_dice)]
 
         for x, pos in zip(roll, positions[:num_dice + 1]):
             scatter = DieScatter(id=str(x), scale=0.75)
@@ -427,6 +464,7 @@ class Base(FloatLayout):
     dice = ObjectProperty()
     roll = ObjectProperty()
     end_turn = ObjectProperty()
+    score_area = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(Base, self).__init__(**kwargs)
@@ -446,6 +484,7 @@ class DieBasket(FloatLayout):
 
     def __init__(self, **kwargs):
         super(DieBasket, self).__init__(**kwargs)
+
         self.valid_basket = rgba(colors['valid'])
 
     def on_keepers(self, instance, value):
@@ -477,11 +516,13 @@ class DieBasket(FloatLayout):
 class Screens(ScreenManager):
     def __init__(self, **kwargs):
         super(Screens, self).__init__(**kwargs)
+
         self.add_widget(MenuScreen(name='menu'))
         self.add_widget(PlayerNumberScreen(name='number'))
         self.add_widget(PlayerNameScreen(name='name'))
         self.add_widget(GameScreen(name='game'))
         self.add_widget(ResultsScreen(name='results'))
+
         self.current = 'menu'
 
 

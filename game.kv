@@ -188,8 +188,8 @@ ScreenManager:
         keep_ratio: False
 
 <PlayerScore>
-    size_hint: (1, 0.15)
-    pos_hint: {'x': 0., 'y': .9}
+
+<ScoreArea>
     canvas:
         Color:
             rgba: rgba(colors['prime dark'])
@@ -201,14 +201,14 @@ ScreenManager:
     name: 'game'
     base: base
     Base:
-        player_score: player_score
+        score_area: score_area
         die_basket: die_basket
         dice: dice
         end_turn: end_turn
         roll: roll
         id: base
-        PlayerScore:
-            id: player_score
+        ScoreArea:
+            id: score_area
         DieBasket:
             id: die_basket
             active_game: root.active_game
