@@ -36,6 +36,14 @@ class ButtonLabel(Label):
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
+            layout = self.parent.parent.layout
+            if layout.one == self:
+                layout.parent.set_num_players(1)
+            elif layout.two == self:
+                layout.parent.set_num_players(2)
+            elif layout.three == self:
+                layout.parent.set_num_players(3)
+            touch.grab(self)
             return True
 
 
@@ -46,8 +54,14 @@ class PlayerNumberScreen(Screen):
         super(PlayerNumberScreen, self).__init__(**kwargs)
 
     def set_num_players(self, num_players):
-        self.num_players = num_players
-        self.parent.current = 'name'
+        if num_players:
+            self.num_players = num_players
+            self.parent.current = 'name'
+
+    # def on_touch_down(self, touch):
+    #     if self.collide_point(*touch.pos):
+    #         # touch.grab(self)
+    #         return True
 
 
 class FocusInput(TextInput):
