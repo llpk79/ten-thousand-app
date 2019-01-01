@@ -58,11 +58,6 @@ class PlayerNumberScreen(Screen):
             self.num_players = num_players
             self.parent.current = 'name'
 
-    # def on_touch_down(self, touch):
-    #     if self.collide_point(*touch.pos):
-    #         # touch.grab(self)
-    #         return True
-
 
 class FocusInput(TextInput):
     def __init__(self, **kwargs):
@@ -167,7 +162,7 @@ class GameScreen(Screen):
             self.base.die_basket.keepers.clear()
             self.base.roll.update_color()
             self.base.roll.keeper_count.clear()
-            self.base.dice.clear_widgets()
+            self.base.dice.remove_dice(self.base.dice.children, turn=True)
             self.update_display('round')
             self.update_display('name', 'small')
 
@@ -393,15 +388,19 @@ class Dice(Widget):
 
     def update_dice(self, num_dice, turn=False):
         if not turn:
-            self.clear_widgets([widget for widget in self.children if widget not in self.parent.roll.keeper_count])
+            self.remove_dice([widget for widget in self.children if widget not in self.parent.roll.keeper_count])
         else:
-            self.clear_widgets()
+            self.remove_dice(self.children)
 
         # sound = sounds[random.randint(1, 6)]
         # sound.play()
 
-        positions = [((490, 540), (215, 270)), ((245, 285), (230, 260)), ((50, 70), (236, 265)), ((60, 90), (85, 120)),
-                     ((235, 275), (85, 130)), ((500, 550), (80, 120))]
+        positions = [((490, 540), (215, 270)),
+                     ((245, 285), (230, 260)),
+                     ((50, 70), (236, 265)),
+                     ((60, 90), (85, 120)),
+                     ((235, 275), (85, 130)),
+                     ((500, 550), (80, 120))]
         roll = [randint(1, 6) for _ in range(num_dice)]
 
         for x, pos in zip(roll, positions[:num_dice + 1]):
@@ -414,6 +413,17 @@ class Dice(Widget):
             anim &= Animation(rotation=randint(-360, 360), d=0.75)
             anim.start(scatter)
             scatter.scale += 0.1
+
+    def remove_dice(self, dice, turn=False):
+        anim = Animation(pos=(-50, -50), d=0.5, t='in_out_quad')
+        anim.bind(on_complete=lambda x, y: self.complete(y))
+        if dice:
+            for die in dice:
+                anim.start(die)
+
+    def complete(self, die):
+        die.canvas.clear()
+        die.parent.remove_widget(die)
 
 
 class EndTurn(Label):
