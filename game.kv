@@ -28,7 +28,7 @@ ScreenManager:
         name: 'results'
         manager: 'screen_manager'
 
-<MenuScreen>
+<MenuScreen>:
     name: 'menu'
     FloatLayout:
         Image:
@@ -48,7 +48,7 @@ ScreenManager:
                     pos: self.pos
                     size: self.size
 
-<ResultsScreen>
+<ResultsScreen>:
     name: 'results'
     FloatLayout:
         Image:
@@ -66,7 +66,7 @@ ScreenManager:
             pos_hint: {'x': .45, 'y': .09}
             on_press: root.exit()
 
-<PlayerNameScreen>
+<PlayerNameScreen>:
     name: 'name'
     FloatLayout:
         Image:
@@ -74,7 +74,7 @@ ScreenManager:
             allow_stretch: True
             keep_ratio: False
 
-<ButtonLabel>
+<ButtonLabel>:
     font_size: 50
     halign: 'center'
     color: rgba(colors['text'])
@@ -85,7 +85,7 @@ ScreenManager:
             pos: self.x, self.y
             size: self.texture_size[0] + 5, self.texture_size[1]
 
-<PlayerNumberScreen>
+<PlayerNumberScreen>:
     name: 'number'
     layout: layout
     FloatLayout:
@@ -109,25 +109,22 @@ ScreenManager:
             text: 'One'
             pos_hint: {'x': .15, 'y': .425}
             size_hint: .11, .1
-            #on_touch_down: root.set_num_players(1)
         ButtonLabel:
             id: two
             text: 'Two'
             pos_hint: {'x': .4, 'y': .425}
             size_hint: .13, .1
-            #on_touch_down: root.set_num_players(2)
         ButtonLabel:
             id: three
             text: 'Three'
             pos_hint: {'x': .65, 'y': .425}
             size_hint: .165, .1
-            #on_touch_down: root.set_num_players(3)
 
-<DieHolder>
+<DieHolder>:
 
-<KeeperBox>
+<KeeperBox>:
 
-<DieBasket>
+<DieBasket>:
     keeper_box: keeper_box
     size_hint: 1, 0.4
     pos_hint: {'x': 0.0, 'y': 0.6}
@@ -138,12 +135,12 @@ ScreenManager:
             pos: self.x, self.y
             size: self.width, self.x + 3
     Label:
-        text: 'Put Keepers Up Here'
+        text: 'Put Dice Up Here To Score'
         font_size: 18
         bold: True
         color: rgba(colors['text'])
         halign: 'center'
-        pos_hint: {'x': self.x, 'y': -.425}
+        pos_hint: {'x': self.x, 'y': -0.425}
     KeeperBox:
         id: keeper_box
         pos_hint: {'x': 0, 'y': 0.33}
@@ -157,41 +154,67 @@ ScreenManager:
         DieHolder:
         DieHolder:
 
-<Roll>
+<Roll>:
     text: 'Roll \'em!'
     color: rgba(colors['text'])
-    size_hint: (0.2, 0.1)
-    pos_hint: {'x': 0.15, 'y': 0.05}
     font_size: 35
     canvas.before:
         Color:
             rgba: rgba(colors['prime'])
         Rectangle:
-            pos: self.pos[0] + 7, self.pos[1] + 7
-            size: self.texture_size[0] + 10, self.texture_size[1] + 5
+            pos: self.pos
+            size: self.size
 
-<EndTurn>
-    text: 'Keep/End Turn'
+<EndTurn>:
+    text: 'End Turn'
     color: rgba(colors['text'])
-    size_hint: (.325, .1)
-    pos_hint: {'x': .45, 'y': .05}
     font_size: 35
     canvas.before:
         Color:
             rgba: rgba(colors['prime'])
         Rectangle:
-            pos: self.pos[0] + 7, self.pos[1] + 7
-            size: self.texture_size[0] + 10, self.texture_size[1] + 5
+            pos: self.pos
+            size: self.size
 
-<Base>
+<KeepAll>:
+    text: 'Keep All'
+    color: rgba(colors['text'])
+    font_size: 35
+    canvas.before:
+        Color:
+            rgba: rgba(colors['prime'])
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<Rules>:
+    text: 'See Rules'
+    color: rgba(colors['text'])
+    font_size: 35
+    canvas.before:
+        Color:
+            rgba: rgba(colors['prime'])
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+<GameButtonRow>:
+    size_hint: 1, .15
+    pos_hint: {'x': 0, 'y': 0}
+    padding: [5]
+    spacing: 5
+
+<Base>:
     Image:
         source: 'images/tabletop2.jpg'
         allow_stretch: True
         keep_ratio: False
 
-<PlayerScore>
+<PlayerScore>:
 
-<ScoreArea>
+<ScoreArea>:
+    size_hint: 1, 0.1
+    pos_hint: {'x': 0, 'y': 0.9}
     canvas:
         Color:
             rgba: rgba(colors['prime dark'])
@@ -199,15 +222,14 @@ ScreenManager:
             pos: self.pos
             size: self.size
 
-<GameScreen>
+<GameScreen>:
     name: 'game'
     base: base
     Base:
         score_area: score_area
         die_basket: die_basket
         dice: dice
-        end_turn: end_turn
-        roll: roll
+        buttons: buttons
         id: base
         ScoreArea:
             id: score_area
@@ -216,7 +238,17 @@ ScreenManager:
             active_game: root.active_game
         Dice:
             id: dice
-        EndTurn:
-            id: end_turn
-        Roll:
-            id: roll
+        GameButtonRow:
+            id: buttons
+            roll: roll
+            end_turn: end_turn
+            keep: keep
+            rules: rules
+            Roll:
+                id: roll
+            EndTurn:
+                id: end_turn
+            KeepAll:
+                id: keep
+            Rules:
+                id: rules
