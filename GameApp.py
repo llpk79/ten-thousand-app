@@ -36,6 +36,7 @@ class ButtonLabel(Label):
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
+            touch.grab(self)
             layout = self.parent.parent.layout
             if layout.one == self:
                 layout.parent.set_num_players(1)
@@ -43,7 +44,6 @@ class ButtonLabel(Label):
                 layout.parent.set_num_players(2)
             elif layout.three == self:
                 layout.parent.set_num_players(3)
-            touch.grab(self)
             return True
 
 
@@ -127,10 +127,6 @@ class ScoreArea(BoxLayout):
     def __init__(self, **kwargs):
         super(ScoreArea, self).__init__(**kwargs)
 
-        self.size_hint = (1, .1)
-        self.pos_hint = {'x': 0, 'y': .9}
-        self.id = 'score_area'
-
 
 class GameScreen(Screen):
     active_game = ObjectProperty()
@@ -158,10 +154,10 @@ class GameScreen(Screen):
             self.update_round_score(red=True)
             self.update_total_score()
             self.base.die_basket.valid_basket = rgba(colors['valid'])
+            self.base.buttons.roll.update_color()
             self.current_player.round_score = 0
             self.base.die_basket.keepers.clear()
-            self.base.roll.update_color()
-            self.base.roll.keeper_count.clear()
+            self.base.buttons.roll.keeper_count.clear()
             self.base.dice.remove_dice(self.base.dice.children, turn=True)
             self.update_display('round')
             self.update_display('name', 'small')
@@ -189,7 +185,7 @@ class GameScreen(Screen):
 
             if not red:
                 die_basket.valid_basket = rgba(colors['error'])
-                self.base.roll.background_color = rgba(colors['prime off'])
+                self.base.buttons.roll.background_color = rgba(colors['prime off'])
 
         die_basket.basket_score = 0
 
@@ -353,7 +349,7 @@ class DieScatter(Scatter):
         if touch.grab_current is self:
             die_basket = self.parent.parent.die_basket
             keepers = die_basket.keepers
-            keeper_count = self.parent.parent.roll.keeper_count
+            keeper_count = self.parent.parent.buttons.roll.keeper_count
             die_holders = die_basket.keeper_box.children
 
             self.scale -= .1
@@ -388,7 +384,8 @@ class Dice(Widget):
 
     def update_dice(self, num_dice, turn=False):
         if not turn:
-            self.remove_dice([widget for widget in self.children if widget not in self.parent.roll.keeper_count])
+            self.remove_dice([widget for widget in self.children
+                              if widget not in self.parent.buttons.roll.keeper_count])
         else:
             self.remove_dice(self.children)
 
@@ -422,8 +419,25 @@ class Dice(Widget):
                 anim.start(die)
 
     def complete(self, die):
-        die.canvas.clear()
         die.parent.remove_widget(die)
+
+
+class GameButtonRow(BoxLayout):
+    def __init__(self, **kwargs):
+        super(GameButtonRow, self).__init__(**kwargs)
+        roll = ObjectProperty()
+        end_turn = ObjectProperty()
+        keep = ObjectProperty()
+
+
+class Rules(Label):
+    def __init__(self, **kwargs):
+        super(Rules, self).__init__(**kwargs)
+
+
+class KeepAll(Label):
+    def __init__(self, **kwargs):
+        super(KeepAll, self).__init__(**kwargs)
 
 
 class EndTurn(Label):
@@ -432,7 +446,7 @@ class EndTurn(Label):
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
-            self.parent.parent.set_current_player()
+            self.parent.parent.parent.set_current_player()
             return True
 
 
@@ -445,50 +459,51 @@ class Roll(Label):
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             touch.grab(self)
-            die_basket = self.parent.die_basket
+            die_basket = self.parent.parent.die_basket
 
             if die_basket.valid_basket == rgba(colors['valid']):
                 for keeper in die_basket.keepers:
                     self.keeper_count.append(keeper)
                 if len(self.keeper_count) >= 6:
                     self.keeper_count.clear()
-                self.parent.dice.update_dice(6 - len(self.keeper_count))
+                self.parent.parent.dice.update_dice(6 - len(self.keeper_count))
 
-            self.parent.parent.update_round_score()
+            self.parent.parent.parent.update_round_score()
 
             for keeper in self.keeper_count:
                 keeper.locked = True
 
             for keeper in die_basket.keepers:
-                with keeper.canvas.after:
-                    Color(.9, .9, .9, .5)
-                    Rectangle(pos=(keeper.pos[0] + 2, keeper.pos[1] + 7),
-                              size=(keeper.children[0].size[0] - 25, keeper.children[0].size[1] - 25))
+                gray = InstructionGroup()
+                gray.add(Color(1, 1, 1,  .5))
+                gray.add(Rectangle(pos=(5, 7), size=(keeper.size[0] - 15, keeper.size[1] - 15)))
+                keeper.canvas.add(gray)
+
             die_basket.keepers.clear()
             touch.ungrab(self)
             self.update_color()
             return True
 
     def update_color(self):
-        if self.parent.die_basket.valid_basket == rgba(colors['error']):
+        die_basket = self.parent.parent.die_basket.valid_basket
+        if die_basket == rgba(colors['error']):
             with self.canvas.before:
                 Color(rgba=rgba(colors['prime off']))
-                Rectangle(pos=(self.pos[0] + 7, self.pos[1] + 7),
-                          size=(self.texture_size[0] + 10, self.texture_size[1] + 5))
+                Rectangle(pos=self.pos,
+                          size=self.size)
 
-        elif self.parent.die_basket.valid_basket == rgba(colors['valid']):
+        elif die_basket == rgba(colors['valid']):
             with self.canvas.before:
                 Color(rgba=rgba(colors['prime']))
-                Rectangle(pos=(self.pos[0] + 7, self.pos[1] + 7),
-                          size=(self.texture_size[0] + 10, self.texture_size[1] + 5))
+                Rectangle(pos=self.pos,
+                          size=self.size)
 
 
 class Base(FloatLayout):
     die_basket = ObjectProperty()
     dice = ObjectProperty()
-    roll = ObjectProperty()
-    end_turn = ObjectProperty()
     score_area = ObjectProperty()
+    buttons = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(Base, self).__init__(**kwargs)
@@ -521,20 +536,14 @@ class DieBasket(FloatLayout):
         scored = self.active_game.validate_choice(choice)
         scored = not bool(scored)
 
-        roll = self.parent.roll
+        roll = self.parent.buttons.roll
         if not scored or not choice:
             self.valid_basket = rgba(colors['error'])
-            with roll.canvas.before:
-                Color(rgba=rgba(colors['prime off']))
-                Rectangle(pos=(roll.pos[0] + 7, roll.pos[1] + 7),
-                          size=(roll.texture_size[0] + 10, roll.texture_size[1] + 5))
+            roll.update_color()
 
         if scored and choice:
             self.valid_basket = rgba(colors['valid'])
-            with roll.canvas.before:
-                Color(rgba=rgba(colors['prime']))
-                Rectangle(pos=(roll.pos[0] + 7, roll.pos[1] + 7),
-                          size=(roll.texture_size[0] + 10, roll.texture_size[1] + 5))
+            roll.update_color()
 
 
 class Screens(ScreenManager):
