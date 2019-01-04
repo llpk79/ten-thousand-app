@@ -63,7 +63,6 @@ class FocusInput(TextInput):
     def __init__(self, **kwargs):
         super(FocusInput, self).__init__(**kwargs)
 
-        self.focus = True
         self.write_tab = False
 
     def on_focus(self, widget, value):
@@ -94,19 +93,20 @@ class PlayerNameScreen(Screen):
 
     def on_enter(self):
         self.get_num_players()
-        player_num = self.num_players
 
         for i in range(1, self.num_players + 1):
-            label = Label(text=f'Enter Player {player_num}\'s name:',
+            label = Label(text=f'Enter Player {i}\'s name:',
                           color=rgba(colors['text']),
-                          pos_hint={'x': .2, 'y': (i / 10) + .45},
+                          pos_hint={'x': .2, 'y': .75 - (i * .1)},
                           size_hint=(.25, .05),
-                          id=str(player_num))
+                          id=str(i))
             self.add_widget(label)
-            self.add_widget(FocusInput(multiline=False,
-                                       pos_hint={'x': .25, 'y': (i / 10) + .4},
-                                       size_hint=(.25, .05)))
-            player_num -= 1
+            input_name = (FocusInput(multiline=False,
+                                     pos_hint={'x': .25, 'y': .70 - (i * .1)},
+                                     size_hint=(.25, .05)))
+            if i == 1:
+                input_name.focus = True
+            self.add_widget(input_name)
 
 
 class MenuScreen(Screen):
@@ -249,9 +249,8 @@ class GameScreen(Screen):
     def on_enter(self, *args):
         self.get_active_game()
         self.get_active_game_players()
-        self.set_current_player()
 
-        for i, player in enumerate(reversed(self.list_o_players)):
+        for i, player in enumerate(self.list_o_players):
             new = PlayerScore(id=player.name)
 
             for child in new.children:
@@ -283,6 +282,7 @@ class GameScreen(Screen):
                         child.bold = True
 
             self.base.score_area.add_widget(new)
+        self.set_current_player()
 
 
 class KeeperBox(BoxLayout):
