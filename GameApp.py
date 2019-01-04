@@ -17,6 +17,7 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.label import Label
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.popup import Popup
 from kivy.uix.widget import Widget
 from kivy.uix.scatter import Scatter
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -26,6 +27,7 @@ from kivy.utils import rgba
 from collections import deque
 from media import sounds, die_images
 from logic import Game
+from game_rules import msg
 from colors import colors
 from random import randint
 
@@ -444,9 +446,24 @@ class GameButtonRow(BoxLayout):
         keep = ObjectProperty()
 
 
-class Rules(Label):
+class RulesButton(Label):
     def __init__(self, **kwargs):
-        super(Rules, self).__init__(**kwargs)
+        super(RulesButton, self).__init__(**kwargs)
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            touch.grab(self)
+            popup = RulesPopup()
+            popup.open()
+
+
+class RulesPopup(Popup):
+    def __init__(self, **kwargs):
+        super(RulesPopup, self).__init__(**kwargs)
+        self.title = 'How To Play'
+        label = Label(text=msg)
+        self.content = label
+        self.size_hint = (.9, .9)
 
 
 class KeepAll(Label):
