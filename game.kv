@@ -36,17 +36,26 @@ ScreenManager:
             allow_stretch: True
             keep_ratio: False
         Label:
+            text: 'Welcome to Ten Thousand!'
+            font_size: 35
+            color: rgba(colors['text'])
+            size_hint: .4, .1
+            pos_hint: {'x': .3, 'y': .6}
+        Label:
+            text: 'A dice game'
+            font_size: 20
+            color: rgba(colors['text'])
+            size_hint: .2, .1
+            pos_hint: {'x': .4, 'y': .55}
+        Button:
             text: 'Let\'s play some dice!'
             color: rgba(colors['text'])
-            size_hint: (.2, .1)
-            pos_hint: {'x': 0.4, 'y': 0.475}
-            on_touch_down: root.parent.current = 'number'
-            canvas.before:
-                Color:
-                    rgba: rgba(colors['prime'])
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
+            font_size: 35
+            size_hint: .47, .1
+            pos_hint: {'x': 0.25, 'y': 0.45}
+            on_press: root.parent.current = 'number'
+            background_normal: ''
+            background_color: rgba(colors['prime dark'])
 
 <ResultsScreen>:
     name: 'results'
@@ -74,25 +83,19 @@ ScreenManager:
             allow_stretch: True
             keep_ratio: False
 
-<ButtonLabel>:
+<PlayerNumButton@Button>:
+    color: rgba(colors['text'])
     font_size: 50
     halign: 'center'
-    color: rgba(colors['text'])
-    canvas.before:
-        Color:
-            rgba: rgba(colors['prime'])
-        Rectangle:
-            pos: self.x, self.y
-            size: self.texture_size[0] + 5, self.texture_size[1]
+    background_normal: ''
+    background_color: rgba(colors['prime dark'])
 
 <PlayerNumberScreen>:
     name: 'number'
     layout: layout
     FloatLayout:
+        buttons: buttons
         id: layout
-        one: one
-        two: two
-        three: three
         Image:
             source: 'images/tabletop3.jpg'
             allow_stretch: True
@@ -104,21 +107,24 @@ ScreenManager:
             color: rgba(colors['text'])
             size_hint: (.275, .075)
             pos_hint: {'x': .35, 'y': .7}
-        ButtonLabel:
-            id: one
-            text: 'One'
-            pos_hint: {'x': .15, 'y': .425}
-            size_hint: .11, .1
-        ButtonLabel:
-            id: two
-            text: 'Two'
-            pos_hint: {'x': .4, 'y': .425}
-            size_hint: .13, .1
-        ButtonLabel:
-            id: three
-            text: 'Three'
-            pos_hint: {'x': .65, 'y': .425}
-            size_hint: .165, .1
+        BoxLayout:
+            one: one
+            two: two
+            three: three
+            id: buttons
+            size_hint: .8, .2
+            pos_hint: {'x': .1, 'y': .4}
+            spacing: 5
+            padding: [5]
+            PlayerNumButton:
+                id: one
+                text: 'One'
+            PlayerNumButton:
+                id: two
+                text: 'Two'
+            PlayerNumButton:
+                id: three
+                text: 'Three'
 
 <DieHolder>:
 
@@ -135,7 +141,7 @@ ScreenManager:
             pos: self.x, self.y
             size: self.width, self.x + 3
     Label:
-        text: 'Put Dice Up Here To Score'
+        text: 'Drag Dice To Line Or Double Click To Score'
         font_size: 18
         bold: True
         color: rgba(colors['text'])
