@@ -29,28 +29,28 @@ from media import sounds, die_images
 from logic import Game
 from game_rules import msg
 from colors import colors
-from random import randint
+from random import randint, uniform
 
 
-class ButtonLabel(Label):
+class PlayerNumButton(Button):
     def __init__(self, **kwargs):
-        super(ButtonLabel, self).__init__(**kwargs)
+        super(PlayerNumButton, self).__init__(**kwargs)
 
-    def on_touch_down(self, touch):
-        if self.collide_point(*touch.pos):
-            touch.grab(self)
-            layout = self.parent.parent.layout
-            if layout.one == self:
-                layout.parent.set_num_players(1)
-            elif layout.two == self:
-                layout.parent.set_num_players(2)
-            elif layout.three == self:
-                layout.parent.set_num_players(3)
-            return True
+    def on_press(self):
+        buttons = self.parent.parent.buttons
+        player_num_screen = buttons.parent.parent
+        if buttons.one == self:
+            player_num_screen.set_num_players(1)
+        elif buttons.two == self:
+            player_num_screen.set_num_players(2)
+        elif buttons.three == self:
+            player_num_screen.set_num_players(3)
+        return True
 
 
 class PlayerNumberScreen(Screen):
     num_players = ObjectProperty()
+    layout = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(PlayerNumberScreen, self).__init__(**kwargs)
@@ -408,24 +408,25 @@ class Dice(Widget):
         # sound = sounds[random.randint(1, 6)]
         # sound.play()
 
-        positions = [((490, 540), (215, 270)),
-                     ((245, 285), (230, 260)),
-                     ((50, 70), (236, 265)),
-                     ((60, 90), (85, 120)),
-                     ((235, 275), (85, 130)),
-                     ((500, 550), (80, 120))]
+        positions = [{'x': uniform(.05, .25), 'y': uniform(.35, .45)},  # Top row.
+                     {'x': uniform(.35, .55), 'y': uniform(.35, .45)},
+                     {'x': uniform(.65, .85), 'y': uniform(.35, .45)},
+                     {'x': uniform(.05, .25), 'y': uniform(.12, .22)},  # Bottom row.
+                     {'x': uniform(.35, .55), 'y': uniform(.12, .22)},
+                     {'x': uniform(.65, .85), 'y': uniform(.12, .22)}]
+
         roll = [randint(1, 6) for _ in range(num_dice)]
 
         for x, pos in zip(roll, positions[:num_dice + 1]):
-            scatter = DieScatter(id=str(x), scale=0.75)
+            scatter = DieScatter(id=str(x), scale=0.85)
             image = Image(source=die_images[x])
+
             scatter.add_widget(image)
             self.add_widget(scatter)
 
-            anim = Animation(pos=(randint(*pos[0]), randint(*pos[1])), d=0.5)
+            anim = Animation(pos=(self.parent.width * pos['x'], self.parent.height * pos['y']), d=0.5)
             anim &= Animation(rotation=randint(-360, 360), d=0.75)
             anim.start(scatter)
-            scatter.scale += 0.1
 
     def remove_dice(self, dice, turn=False):
         anim = Animation(pos=(-50, -50), d=0.5, t='in_out_quad')
