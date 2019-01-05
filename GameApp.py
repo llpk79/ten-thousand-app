@@ -446,15 +446,13 @@ class GameButtonRow(BoxLayout):
         keep = ObjectProperty()
 
 
-class RulesButton(Label):
+class RulesButton(Button):
     def __init__(self, **kwargs):
         super(RulesButton, self).__init__(**kwargs)
 
-    def on_touch_down(self, touch):
-        if self.collide_point(*touch.pos):
-            touch.grab(self)
-            popup = RulesPopup()
-            popup.open()
+    def on_press(self):
+        popup = RulesPopup()
+        popup.open()
 
 
 class RulesPopup(Popup):
@@ -466,81 +464,67 @@ class RulesPopup(Popup):
         self.size_hint = (.9, .9)
 
 
-class KeepAll(Label):
+class KeepAll(Button):
     def __init__(self, **kwargs):
         super(KeepAll, self).__init__(**kwargs)
 
-    def on_touch_down(self, touch):
-        if self.collide_point(*touch.pos):
-            touch.grab(self)
-            return True
-
-    def on_touch_up(self, touch):
-        if touch.grab_current is self:
-            dice = self.parent.parent.dice.children
-            for die in dice:
-                if (die not in self.parent.parent.buttons.roll.keeper_count and
-                        die not in self.parent.parent.die_basket.keepers):
-                    die.add_to_keepers()
+    def on_press(self):
+        dice = self.parent.parent.dice.children
+        for die in dice:
+            if (die not in self.parent.parent.buttons.roll.keeper_count and
+                    die not in self.parent.parent.die_basket.keepers):
+                die.add_to_keepers()
 
 
-class EndTurn(Label):
+class EndTurn(Button):
     def __init__(self, **kwargs):
         super(EndTurn, self).__init__(**kwargs)
 
-    def on_touch_down(self, touch):
-        if self.collide_point(*touch.pos):
-            self.parent.parent.parent.set_current_player()
-            return True
+    def on_press(self):
+        self.parent.parent.parent.set_current_player()
+        return True
 
 
-class Roll(Label):
+class Roll(Button):
     keeper_count = ListProperty()
 
     def __init__(self, **kwargs):
         super(Roll, self).__init__(**kwargs)
 
-    def on_touch_down(self, touch):
-        if self.collide_point(*touch.pos):
-            touch.grab(self)
-            die_basket = self.parent.parent.die_basket
+    def on_press(self):
+        die_basket = self.parent.parent.die_basket
 
-            if die_basket.valid_basket == rgba(colors['valid']):
-                for keeper in die_basket.keepers:
-                    self.keeper_count.append(keeper)
-                if len(self.keeper_count) >= 6:
-                    self.keeper_count.clear()
-                self.parent.parent.dice.update_dice(6 - len(self.keeper_count))
-
-            self.parent.parent.parent.update_round_score()
-
-            for keeper in self.keeper_count:
-                keeper.locked = True
-
+        if die_basket.valid_basket == rgba(colors['valid']):
             for keeper in die_basket.keepers:
-                gray = InstructionGroup()
-                gray.add(Color(1, 1, 1,  .5))
-                gray.add(Rectangle(pos=(5, 7), size=(keeper.size[0] - 15, keeper.size[1] - 15)))
-                keeper.canvas.add(gray)
+                self.keeper_count.append(keeper)
+            if len(self.keeper_count) >= 6:
+                self.keeper_count.clear()
+            self.parent.parent.dice.update_dice(6 - len(self.keeper_count))
 
-            die_basket.keepers.clear()
-            touch.ungrab(self)
-            self.update_color()
-            return True
+        self.parent.parent.parent.update_round_score()
+
+        for keeper in self.keeper_count:
+            keeper.locked = True
+
+        for keeper in die_basket.keepers:
+            gray = InstructionGroup()
+            gray.add(Color(1, 1, 1,  .5))
+            gray.add(Rectangle(pos=(5, 7), size=(keeper.size[0] - 15, keeper.size[1] - 15)))
+            keeper.canvas.add(gray)
+
+        die_basket.keepers.clear()
+        self.update_color()
+        return True
 
     def update_color(self):
         die_basket = self.parent.parent.die_basket.valid_basket
         if die_basket == rgba(colors['error']):
-            with self.canvas.before:
-                Color(rgba=rgba(colors['prime off']))
-                Rectangle(pos=self.pos,
-                          size=self.size)
+            self.background_color = rgba(colors['prime off'])
+            self.disabled = True
 
         elif die_basket == rgba(colors['valid']):
-            with self.canvas.before:
-                Color(rgba=rgba(colors['prime']))
-                Rectangle(pos=self.pos,
-                          size=self.size)
+            self.background_color = rgba(colors['prime dark'])
+            self.disabled = False
 
 
 class Base(FloatLayout):
