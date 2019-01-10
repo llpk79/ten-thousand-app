@@ -3,10 +3,13 @@
 #: import ScreenManager kivy.uix.screenmanager.ScreenManager
 #: import colors colors.colors
 #: import rgba kivy.utils.rgba
-
+#: import FallOutTransition kivy.uix.screenmanager.FallOutTransition
+#: import CardTransition kivy.uix.screenmanager.CardTransition
+#: import SwapTransition kivy.uix.screenmanager.SwapTransition
 
 ScreenManager:
     id: screen_manager
+    transition: FallOutTransition()
     MenuScreen:
         id: menu
         name: 'menu'
@@ -32,7 +35,7 @@ ScreenManager:
     name: 'menu'
     FloatLayout:
         Image:
-            source: 'images/tabletop6.jpg'
+            source: 'images/tabletop4.jpg'
             allow_stretch: True
             keep_ratio: False
         Label:
@@ -61,7 +64,7 @@ ScreenManager:
     name: 'results'
     FloatLayout:
         Image:
-            source: 'images/tabletop1.jpg'
+            source: 'images/tabletop4.jpg'
             allow_stretch: True
             keep_ratio: False
         Button:
@@ -97,7 +100,7 @@ ScreenManager:
         buttons: buttons
         id: layout
         Image:
-            source: 'images/tabletop3.jpg'
+            source: 'images/tabletop4.jpg'
             allow_stretch: True
             keep_ratio: False
         Label:
@@ -133,7 +136,7 @@ ScreenManager:
 <DieBasket>:
     keeper_box: keeper_box
     size_hint: 1, 0.4
-    pos_hint: {'x': 0.0, 'y': 0.6}
+    pos_hint: {'x': 0.0, 'y': 0.7}
     canvas.after:
         Color:
             rgba: root.valid_basket
@@ -144,12 +147,12 @@ ScreenManager:
         text: 'Drag Dice To Line Or Double Click To Score'
         font_size: 18
         bold: True
-        color: rgba(colors['text'])
+        #color: rgba(colors['text'])
         halign: 'center'
         pos_hint: {'x': self.x, 'y': -0.425}
     KeeperBox:
         id: keeper_box
-        pos_hint: {'x': 0, 'y': 0.33}
+        pos_hint: {'x': 0, 'y': 0.1}
         size_hint: 1, 0.4
         padding: [5]
         spacing: 5
@@ -165,28 +168,28 @@ ScreenManager:
     color: rgba(colors['text'])
     font_size: 35
     background_normal: ''
-    background_color: rgba(colors['prime dark'])
+    background_color: rgba(colors['second dark'])
 
 <EndTurn>:
     text: 'End Turn'
     color: rgba(colors['text'])
     font_size: 35
     background_normal: ''
-    background_color: rgba(colors['prime dark'])
+    background_color: rgba(colors['second dark'])
 
 <KeepAll>:
     text: 'Keep All'
     color: rgba(colors['text'])
     font_size: 35
     background_normal: ''
-    background_color: rgba(colors['prime dark'])
+    background_color: rgba(colors['second dark'])
 
 <RulesButton>:
     text: 'See Rules'
     color: rgba(colors['text'])
     font_size: 35
     background_normal: ''
-    background_color: rgba(colors['prime dark'])
+    background_color: rgba(colors['second dark'])
 
 <GameButtonRow>:
     size_hint: 1, .15
@@ -196,7 +199,7 @@ ScreenManager:
 
 <Base>:
     Image:
-        source: 'images/tabletop2.jpg'
+        source: 'images/tabletop4.jpg'
         allow_stretch: True
         keep_ratio: False
 

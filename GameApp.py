@@ -98,14 +98,16 @@ class PlayerNameScreen(Screen):
 
         for i in range(1, self.num_players + 1):
             label = Label(text=f'Enter Player {i}\'s name:',
+                          font_size=30,
                           color=rgba(colors['text']),
-                          pos_hint={'x': .2, 'y': .75 - (i * .1)},
-                          size_hint=(.25, .05),
+                          pos_hint={'x': .15, 'y': .85 - (i * .2)},
+                          size_hint=(.25, .1),
                           id=str(i))
             self.add_widget(label)
             input_name = (FocusInput(multiline=False,
-                                     pos_hint={'x': .25, 'y': .70 - (i * .1)},
-                                     size_hint=(.25, .05)))
+                                     font_size=30,
+                                     pos_hint={'x': .475, 'y': .85 - (i * .2)},
+                                     size_hint=(.35, .09)))
             if i == 1:
                 input_name.focus = True
             self.add_widget(input_name)
@@ -157,6 +159,7 @@ class GameScreen(Screen):
             self.update_total_score()
             self.base.die_basket.valid_basket = rgba(colors['valid'])
             self.base.buttons.roll.update_color()
+            self.base.buttons.roll.text = 'Roll \'em!'
             self.current_player.round_score = 0
             self.base.die_basket.keepers.clear()
             self.base.buttons.roll.keeper_count.clear()
@@ -164,7 +167,7 @@ class GameScreen(Screen):
             self.update_display('round')
             self.update_display('name', 'small')
 
-        if not any([player.total_score >= 2000 for player in self.list_o_players]):
+        if not any([player.total_score >= 10000 for player in self.list_o_players]):
             temp = self.list_o_players.popleft()
             self.current_player = temp
             self.update_display('name', 'big')
@@ -408,12 +411,13 @@ class Dice(Widget):
         # sound = sounds[random.randint(1, 6)]
         # sound.play()
 
-        positions = [{'x': uniform(.05, .25), 'y': uniform(.35, .45)},  # Top row.
-                     {'x': uniform(.35, .55), 'y': uniform(.35, .45)},
-                     {'x': uniform(.65, .85), 'y': uniform(.35, .45)},
-                     {'x': uniform(.05, .25), 'y': uniform(.12, .22)},  # Bottom row.
-                     {'x': uniform(.35, .55), 'y': uniform(.12, .22)},
-                     {'x': uniform(.65, .85), 'y': uniform(.12, .22)}]
+        # Randomized dice positions.
+        positions = [{'x': uniform(.05, .25), 'y': uniform(.4, .55)},  # Top row.
+                     {'x': uniform(.35, .55), 'y': uniform(.4, .55)},
+                     {'x': uniform(.65, .85), 'y': uniform(.4, .55)},
+                     {'x': uniform(.05, .25), 'y': uniform(.15, .3)},  # Bottom row.
+                     {'x': uniform(.35, .55), 'y': uniform(.15, .3)},
+                     {'x': uniform(.65, .85), 'y': uniform(.15, .3)}]
 
         roll = [randint(1, 6) for _ in range(num_dice)]
 
@@ -436,7 +440,8 @@ class Dice(Widget):
                 anim.start(die)
 
     def complete(self, die):
-        die.parent.remove_widget(die)
+        if die.parent:
+            die.parent.remove_widget(die)
 
 
 class GameButtonRow(BoxLayout):
@@ -520,11 +525,12 @@ class Roll(Button):
     def update_color(self):
         die_basket = self.parent.parent.die_basket.valid_basket
         if die_basket == rgba(colors['error']):
-            self.background_color = rgba(colors['prime off'])
+            self.background_color = rgba(colors['second off'])
             self.disabled = True
 
         elif die_basket == rgba(colors['valid']):
-            self.background_color = rgba(colors['prime dark'])
+            self.background_color = rgba(colors['second dark'])
+            self.text = 'Risk \'n Roll!'
             self.disabled = False
 
 
