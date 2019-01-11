@@ -163,17 +163,36 @@ ScreenManager:
         DieHolder:
         DieHolder:
 
-<PlayerScore>:
-
-<ScoreArea>:
-    size_hint: 1, 0.1
-    pos_hint: {'x': 0, 'y': 0.9}
-    canvas:
+<PlayerArea@Label>:
+    font_size: 22
+    color: rgba(colors['text'])
+    canvas.before:
         Color:
             rgba: rgba(colors['prime dark'])
         Rectangle:
             pos: self.pos
             size: self.size
+
+<PlayerScore>:
+    total: total
+    round: round
+    name: name
+    PlayerArea:
+        id: name
+        text_size: self.width, None
+        halign: 'center'
+    PlayerArea:
+        id: round
+        halign: 'left'
+    PlayerArea:
+        id: total
+        halign: 'right'
+
+<ScoreArea>:
+    size_hint: 1, 0.1
+    pos_hint: {'x': 0, 'y': 0.9}
+    spacing: 2
+    padding: [2]
 
 <Roll>:
     text: 'Roll \'em!'
