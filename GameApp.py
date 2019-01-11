@@ -122,10 +122,6 @@ class PlayerScore(BoxLayout):
     def __init__(self, **kwargs):
         super(PlayerScore, self).__init__(**kwargs)
 
-        self.add_widget(Label(id='name'))
-        self.add_widget(Label(id='round'))
-        self.add_widget((Label(id='total')))
-
 
 class ScoreArea(BoxLayout):
     def __init__(self, **kwargs):
@@ -181,6 +177,31 @@ class GameScreen(Screen):
             if not self.list_o_players:
                 self.parent.current = 'results'
 
+    def on_enter(self, *args):
+        self.get_active_game()
+        self.get_active_game_players()
+
+        for i, player in enumerate(self.list_o_players):
+            player_score = PlayerScore(id=player.name)
+
+            name_area = player_score.name
+            round_area = player_score.round
+            total_area = player_score.total
+            if i == 0:
+                name_area.text = f'[u]{player.name}[/u]'
+                name_area.font_size = 32
+                name_area.bold = True
+                round_area.bold = True
+                total_area.bold = True
+            else:
+                name_area.text = player.name
+                name_area.font_size = 22
+            round_area.text = f'Round: {str(0)}'
+            total_area.text = f'Total: {str(0)}'
+
+            self.base.score_area.add_widget(player_score)
+        self.set_current_player()
+
     def update_round_score(self, red=None):
         die_basket = self.base.die_basket
         if die_basket.valid_basket == rgba(colors['valid']):
@@ -193,49 +214,6 @@ class GameScreen(Screen):
                 self.base.buttons.roll.background_color = rgba(colors['prime off'])
 
         die_basket.basket_score = 0
-
-    def update_display(self, score_type, font_size=None):
-        for player_area in self.base.score_area.children:
-            if player_area.id == self.current_player.name:
-                for score_area in player_area.children:
-
-                    if score_area.id == 'round':
-                        if font_size == 'big':
-                            score_area.bold = True
-                        elif font_size == 'small':
-                            score_area.bold = False
-
-                        if score_type == 'basket':
-                            score_area.font_size = 22
-                            score_area.color = rgba(colors['text'])
-                            score_area.text = 'Round: {}'.format(str(self.current_player.round_score +
-                                                                     self.base.die_basket.basket_score))
-                        if score_type == 'round':
-                            score_area.font_size = 22
-                            score_area.color = rgba(colors['text'])
-                            score_area.text = f'Round: {str(self.current_player.round_score)}'
-
-                    elif score_area.id == 'total':
-                        if font_size == 'big':
-                            score_area.bold = True
-                        elif font_size == 'small':
-                            score_area.bold = False
-
-                        if score_type == 'total':
-                            score_area.font_size = 22
-                            score_area.color = rgba(colors['text'])
-                            score_area.text = f'Total: {str(self.current_player.total_score)}'
-
-                    elif score_area.id == 'name':
-                        if font_size == 'big':
-                            score_area.color = rgba(colors['text'])
-                            score_area.font_size = 25
-                            score_area.bold = True
-
-                        elif font_size == 'small':
-                            score_area.color = rgba(colors['text'])
-                            score_area.font_size = 22
-                            score_area.bold = False
 
     def update_total_score(self):
         if self.base.die_basket.valid_basket == rgba(colors['valid']):
@@ -251,43 +229,49 @@ class GameScreen(Screen):
 
         self.update_display('total')
 
-    def on_enter(self, *args):
-        self.get_active_game()
-        self.get_active_game_players()
+    def update_display(self, score_type, font_size=None):
+        for player_score in self.base.score_area.children:
+            if player_score.id == self.current_player.name:
+                player_area = player_score
 
-        for i, player in enumerate(self.list_o_players):
-            new = PlayerScore(id=player.name)
+        if score_type == 'name':
+            self.update_name_display(player_area.name, font_size)
+        if score_type == 'round' or score_type == 'basket':
+            self.update_round_display(player_area.round, score_type, font_size)
+        if score_type == 'total':
+            self.update_total_display(player_area.total, font_size)
 
-            for child in new.children:
-                if child.id == 'name':
-                    child.halign = 'left'
-                    child.text = player.name
-                    child.color = rgba(colors['text'])
+    def update_name_display(self, player_area, font_size):
+        if font_size == 'big':
+            player_area.markup = True
+            player_area.text = f'[u]{self.current_player.name}[/u]'
+            player_area.font_size = 25
+            player_area.bold = True
+        elif font_size == 'small':
+            player_area.markup = False
+            player_area.text = self.current_player.name
+            player_area.font_size = 22
+            player_area.bold = False
 
-                    if i == 0:
-                        child.bold = True
-                        child.font_size = 32
-                    else:
-                        child.font_size = 22
+    def update_round_display(self, player_area, score_type, font_size):
+        if font_size == 'big':
+            player_area.bold = True
+        elif font_size == 'small':
+            player_area.bold = False
 
-                if child.id == 'round':
-                    child.halign = 'left'
-                    child.text = f'Round: {str(player.round_score)}'
-                    child.color = rgba(colors['text'])
-                    child.font_size = 22
-                    if i == 0:
-                        child.bold = True
+        if score_type == 'basket':
+            player_area.text = 'Round: {}'.format(str(self.current_player.round_score +
+                                                      self.base.die_basket.basket_score))
+        if score_type == 'round':
+            player_area.text = f'Round: {str(self.current_player.round_score)}'
 
-                if child.id == 'total':
-                    child.halign = 'right'
-                    child.text = f'Total: {str(player.total_score)}'
-                    child.color = rgba(colors['text'])
-                    child.font_size = 22
-                    if i == 0:
-                        child.bold = True
+    def update_total_display(self, player_area, font_size):
+        if font_size == 'big':
+            player_area.bold = True
+        elif font_size == 'small':
+            player_area.bold = False
 
-            self.base.score_area.add_widget(new)
-        self.set_current_player()
+        player_area.text = f'Total: {str(self.current_player.total_score)}'
 
 
 class KeeperBox(BoxLayout):
