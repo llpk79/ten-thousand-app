@@ -163,6 +163,18 @@ ScreenManager:
         DieHolder:
         DieHolder:
 
+<PlayerScore>:
+
+<ScoreArea>:
+    size_hint: 1, 0.1
+    pos_hint: {'x': 0, 'y': 0.9}
+    canvas:
+        Color:
+            rgba: rgba(colors['prime dark'])
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
 <Roll>:
     text: 'Roll \'em!'
     color: rgba(colors['text'])
@@ -194,54 +206,43 @@ ScreenManager:
 <GameButtonRow>:
     size_hint: 1, .15
     pos_hint: {'x': 0, 'y': 0}
-    padding: [5]
-    spacing: 5
+    padding: [10]
+    spacing: 10
 
 <Base>:
+    score_area: score_area
+    die_basket: die_basket
+    dice: dice
+    buttons: buttons
     Image:
         source: 'images/tabletop4.jpg'
         allow_stretch: True
         keep_ratio: False
+    ScoreArea:
+        id: score_area
+    DieBasket:
+        id: die_basket
+        active_game: root.parent.active_game
+    Dice:
+        id: dice
+    GameButtonRow:
+        id: buttons
+        roll: roll
+        end_turn: end_turn
+        keep: keep
+        rules: rules
+        Roll:
+            id: roll
+        EndTurn:
+            id: end_turn
+        KeepAll:
+            id: keep
+        RulesButton:
+            id: rules
 
-<PlayerScore>:
-
-<ScoreArea>:
-    size_hint: 1, 0.1
-    pos_hint: {'x': 0, 'y': 0.9}
-    canvas:
-        Color:
-            rgba: rgba(colors['prime dark'])
-        Rectangle:
-            pos: self.pos
-            size: self.size
 
 <GameScreen>:
     name: 'game'
     base: base
     Base:
-        score_area: score_area
-        die_basket: die_basket
-        dice: dice
-        buttons: buttons
         id: base
-        ScoreArea:
-            id: score_area
-        DieBasket:
-            id: die_basket
-            active_game: root.active_game
-        Dice:
-            id: dice
-        GameButtonRow:
-            id: buttons
-            roll: roll
-            end_turn: end_turn
-            keep: keep
-            rules: rules
-            Roll:
-                id: roll
-            EndTurn:
-                id: end_turn
-            KeepAll:
-                id: keep
-            RulesButton:
-                id: rules
