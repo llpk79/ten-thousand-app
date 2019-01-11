@@ -209,7 +209,7 @@ class GameScreen(Screen):
                             score_area.font_size = 22
                             score_area.color = rgba(colors['text'])
                             score_area.text = 'Round: {}'.format(str(self.current_player.round_score +
-                                                                     self.ids['die_basket'].basket_score))
+                                                                     self.base.die_basket.basket_score))
                         if score_type == 'round':
                             score_area.font_size = 22
                             score_area.color = rgba(colors['text'])
@@ -229,7 +229,7 @@ class GameScreen(Screen):
                     elif score_area.id == 'name':
                         if font_size == 'big':
                             score_area.color = rgba(colors['text'])
-                            score_area.font_size = 32
+                            score_area.font_size = 25
                             score_area.bold = True
 
                         elif font_size == 'small':
@@ -238,7 +238,7 @@ class GameScreen(Screen):
                             score_area.bold = False
 
     def update_total_score(self):
-        if self.ids['die_basket'].valid_basket == rgba(colors['valid']):
+        if self.base.die_basket.valid_basket == rgba(colors['valid']):
             if self.current_player.total_score == 0 and self.current_player.round_score < 500:
                 self.current_player.round_score = 0
 
@@ -415,9 +415,9 @@ class Dice(Widget):
         positions = [{'x': uniform(.05, .25), 'y': uniform(.4, .55)},  # Top row.
                      {'x': uniform(.35, .55), 'y': uniform(.4, .55)},
                      {'x': uniform(.65, .85), 'y': uniform(.4, .55)},
-                     {'x': uniform(.05, .25), 'y': uniform(.15, .3)},  # Bottom row.
-                     {'x': uniform(.35, .55), 'y': uniform(.15, .3)},
-                     {'x': uniform(.65, .85), 'y': uniform(.15, .3)}]
+                     {'x': uniform(.05, .25), 'y': uniform(.12, .27)},  # Bottom row.
+                     {'x': uniform(.35, .55), 'y': uniform(.12, .27)},
+                     {'x': uniform(.65, .85), 'y': uniform(.12, .27)}]
 
         roll = [randint(1, 6) for _ in range(num_dice)]
 
