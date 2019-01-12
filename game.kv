@@ -152,7 +152,7 @@ ScreenManager:
         pos_hint: {'x': self.x, 'y': -0.425}
     KeeperBox:
         id: keeper_box
-        pos_hint: {'x': 0, 'y': 0.1}
+        pos_hint: {'x': 0, 'y': 0.125}
         size_hint: 1, 0.4
         padding: [5]
         spacing: 5
@@ -180,6 +180,8 @@ ScreenManager:
     PlayerArea:
         id: name
         text_size: self.width, None
+        shorten: True
+        shorten_from: 'right'
         halign: 'center'
     PlayerArea:
         id: round
@@ -191,8 +193,8 @@ ScreenManager:
 <ScoreArea>:
     size_hint: 1, 0.1
     pos_hint: {'x': 0, 'y': 0.9}
-    spacing: 2
-    padding: [2]
+    spacing: 4
+    padding: [4]
 
 <Roll>:
     text: 'Roll \'em!'
