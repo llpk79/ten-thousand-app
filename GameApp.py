@@ -396,17 +396,17 @@ class Dice(Widget):
         # sound.play()
 
         # Randomized dice positions.
-        positions = [{'x': uniform(.05, .25), 'y': uniform(.4, .55)},  # Top row.
-                     {'x': uniform(.35, .55), 'y': uniform(.4, .55)},
-                     {'x': uniform(.65, .85), 'y': uniform(.4, .55)},
-                     {'x': uniform(.05, .25), 'y': uniform(.12, .27)},  # Bottom row.
-                     {'x': uniform(.35, .55), 'y': uniform(.12, .27)},
-                     {'x': uniform(.65, .85), 'y': uniform(.12, .27)}]
+        positions = [{'x': uniform(.05, .25), 'y': uniform(.4, .52)},  # Top row.
+                     {'x': uniform(.35, .55), 'y': uniform(.4, .52)},
+                     {'x': uniform(.65, .85), 'y': uniform(.4, .52)},
+                     {'x': uniform(.05, .25), 'y': uniform(.15, .27)},  # Bottom row.
+                     {'x': uniform(.35, .55), 'y': uniform(.15, .27)},
+                     {'x': uniform(.65, .85), 'y': uniform(.15, .27)}]
 
         roll = [randint(1, 6) for _ in range(num_dice)]
 
         for x, pos in zip(roll, positions[:num_dice + 1]):
-            scatter = DieScatter(id=str(x), scale=0.85)
+            scatter = DieScatter(id=str(x), scale=.8)
             image = Image(source=die_images[x])
 
             scatter.add_widget(image)
@@ -498,7 +498,7 @@ class Roll(Button):
 
         for keeper in die_basket.keepers:
             gray = InstructionGroup()
-            gray.add(Color(1, 1, 1,  .5))
+            gray.add(Color(.9, .9, .9,  .5))
             gray.add(Rectangle(pos=(5, 7), size=(keeper.size[0] - 15, keeper.size[1] - 15)))
             keeper.canvas.add(gray)
 
@@ -511,11 +511,13 @@ class Roll(Button):
         if die_basket == rgba(colors['error']):
             self.background_color = rgba(colors['second off'])
             self.disabled = True
+            self.color = [1, 1, 1, .3]
 
         elif die_basket == rgba(colors['valid']):
             self.background_color = rgba(colors['second dark'])
             self.text = 'Risk \'n Roll!'
             self.disabled = False
+            self.color = rgba(colors['text'])
 
 
 class Base(FloatLayout):
