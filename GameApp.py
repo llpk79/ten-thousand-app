@@ -341,10 +341,10 @@ class DieScatter(Scatter):
 
             self.scale -= .1
 
-            if (self.collide_widget(die_basket) or touch.is_double_tap) and self not in keepers:
+            if self.collide_widget(die_basket) or touch.is_double_tap:
                 self.add_to_keepers()
 
-            elif not self.collide_widget(die_basket) and self in keepers:
+            elif not self.collide_widget(die_basket):
                 self.remove_from_keepers()
 
             touch.ungrab(self)
@@ -355,15 +355,20 @@ class DieScatter(Scatter):
         keeper_count = self.parent.parent.buttons.roll.keeper_count
         die_holders = die_basket.keeper_box.children
 
-        keepers.append(self)
-        die_holder = die_holders[(len(keepers) + len(keeper_count)) - 1]
+        if self not in keepers:
+            keepers.append(self)
+            die_holder = die_holders[(len(keepers) + len(keeper_count)) - 1]
 
-        anim = Animation(pos=(die_holder.pos[0] + 20, die_holder.pos[1]), d=0.5, t='out_quart')
-        if self.rotation <= 180:
-            anim &= Animation(rotation=0, d=0.5)
+            anim = Animation(pos=(die_holder.pos[0] + 20, die_holder.pos[1]), d=0.5, t='out_quart')
+            if self.rotation <= 180:
+                anim &= Animation(rotation=0, d=0.5)
+            else:
+                anim &= Animation(rotation=360, d=0.5)
+            anim.start(self)
         else:
-            anim &= Animation(rotation=360, d=0.5)
-        anim.start(self)
+            for die_holder, keeper in zip(die_holders[len(keeper_count):], keepers):
+                anim = Animation(pos=(die_holder.pos[0] + 20, die_holder.pos[1]), d=0.2)
+                anim.start(keeper)
 
     def remove_from_keepers(self):
         die_basket = self.parent.parent.die_basket
@@ -371,7 +376,8 @@ class DieScatter(Scatter):
         keeper_count = self.parent.parent.buttons.roll.keeper_count
         die_holders = die_basket.keeper_box.children
 
-        keepers.remove(self)
+        if self in keepers:
+            keepers.remove(self)
 
         for die_holder, keeper in zip(die_holders[len(keeper_count):], keepers):
             anim = Animation(pos=(die_holder.pos[0] + 20, die_holder.pos[1]), d=0.2)
