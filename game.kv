@@ -26,18 +26,26 @@ ScreenManager:
         id: game
         name: 'game'
         manager: 'screen_manager'
+    SoloGameScreen:
+        id: solo
+        name: 'solo'
+        manager: 'screen_manager'
     ResultsScreen:
         id: results
         name: 'results'
         manager: 'screen_manager'
 
+<SoloGameButton>:
+
+<Background@Image>:
+    source: 'images/tabletop4.jpg'
+    allow_stretch: True
+    keep_ratio: False
+
 <MenuScreen>:
     name: 'menu'
     FloatLayout:
-        Image:
-            source: 'images/tabletop4.jpg'
-            allow_stretch: True
-            keep_ratio: False
+        Background:
         Label:
             text: 'Welcome to Ten Thousand!'
             font_size: 35
@@ -51,7 +59,7 @@ ScreenManager:
             size_hint: .2, .1
             pos_hint: {'x': .4, 'y': .55}
         Button:
-            text: 'Let\'s play some dice!'
+            text: 'Play With Friends!'
             color: rgba(colors['text'])
             font_size: 35
             size_hint: .47, .1
@@ -59,14 +67,20 @@ ScreenManager:
             on_press: root.parent.current = 'number'
             background_normal: ''
             background_color: rgba(colors['prime dark'])
+        SoloGameButton:
+            text: 'Solo Challenge!'
+            color: rgba(colors['text'])
+            font_size: 35
+            size_hint: .47, .1
+            pos_hint: {'x': 0.25, 'y': 0.3}
+            background_normal: ''
+            background_color: rgba(colors['prime dark'])
+
 
 <ResultsScreen>:
     name: 'results'
     FloatLayout:
-        Image:
-            source: 'images/tabletop4.jpg'
-            allow_stretch: True
-            keep_ratio: False
+        Background:
         Button:
             text: 'Play again?'
             size_hint: (.15, .05)
@@ -81,10 +95,7 @@ ScreenManager:
 <PlayerNameScreen>:
     name: 'name'
     FloatLayout:
-        Image:
-            source: 'images/tabletop4.jpg'
-            allow_stretch: True
-            keep_ratio: False
+        Background:
 
 <PlayerNumButton@Button>:
     color: rgba(colors['text'])
@@ -99,10 +110,7 @@ ScreenManager:
     FloatLayout:
         buttons: buttons
         id: layout
-        Image:
-            source: 'images/tabletop4.jpg'
-            allow_stretch: True
-            keep_ratio: False
+        Background:
         Label:
             text: 'How many people are playing?\nUp to three can play.'
             halign: 'center'
@@ -235,15 +243,12 @@ ScreenManager:
     die_basket: die_basket
     dice: dice
     buttons: buttons
-    Image:
-        source: 'images/tabletop4.jpg'
-        allow_stretch: True
-        keep_ratio: False
+    Background:
     ScoreArea:
         id: score_area
     DieBasket:
         id: die_basket
-        active_game: root.parent.active_game
+        active_game: root.active_game
     Dice:
         id: dice
     GameButtonRow:
@@ -261,9 +266,35 @@ ScreenManager:
         RulesButton:
             id: rules
 
-
 <GameScreen>:
     name: 'game'
+    base: base
+    Base:
+        id: base
+
+<SoloPlayerScore>:
+    name: name
+    round: round
+    total: total
+    progress: progress
+    PlayerArea:
+        id: name
+        text_size: self.width, None
+        shorten: True
+        shorten_from: 'right'
+        halign: 'center'
+    PlayerArea:
+        id: round
+        halign: 'left'
+    PlayerArea:
+        id: total
+        halign: 'right'
+    PlayerArea:
+        id: progress
+        halign: 'center'
+
+<SoloGameScreen>:
+    name: 'solo'
     base: base
     Base:
         id: base
