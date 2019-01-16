@@ -26,6 +26,10 @@ ScreenManager:
         id: game
         name: 'game'
         manager: 'screen_manager'
+    SoloGoalScreen:
+        id: goal
+        name: 'goal'
+        manager: 'screen_manger'
     SoloGameScreen:
         id: solo
         name: 'solo'
@@ -119,17 +123,13 @@ ScreenManager:
             size_hint: (.275, .075)
             pos_hint: {'x': .35, 'y': .7}
         BoxLayout:
-            one: one
             two: two
             three: three
             id: buttons
-            size_hint: .8, .2
-            pos_hint: {'x': .1, 'y': .4}
+            size_hint: .5, .2
+            pos_hint: {'x': .25, 'y': .4}
             spacing: 5
             padding: [5]
-            PlayerNumButton:
-                id: one
-                text: 'One'
             PlayerNumButton:
                 id: two
                 text: 'Two'
@@ -271,6 +271,41 @@ ScreenManager:
     base: base
     Base:
         id: base
+
+<SoloGoalScreen>:
+    name: 'goal'
+    goals: goals
+    Background:
+    BoxLayout:
+        id: goals
+        points: points
+        turns: turns
+        diff: diff
+        size_hint: .95, .1
+        pos_hint: {'x': .025, 'y': .2}
+        padding: [5]
+        spacing: 5
+        Label:
+            id: points
+            font_size: 30
+            halign: 'left'
+            text: 'Points goal:'
+        Label
+            id: turns
+            font_size: 30
+            text: 'Turn limit:'
+        Label
+            id: diff
+            font_size: 30
+            text: 'Difficulty level:'
+    Button:
+        size_hint: .2, .1
+        pos_hint: {'x': .4, 'y': .05}
+        text: 'Continue'
+        font_size: 30
+        background_normal: ''
+        background_color: rgba(colors['second dark'])
+        on_release: root.parent.current = 'name'
 
 <SoloPlayerScore>:
     name: name
