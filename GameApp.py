@@ -1,18 +1,16 @@
 # Copyright 2018 Paul Kutrich. All rights reserved.
 import kivy
-import re
-import math
-import time
 
 kivy.require('1.10.1')
 
 from kivy.graphics import *
-from kivy.animation import Animation, AnimationTransition
+from kivy.animation import Animation
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty, StringProperty, ListProperty, NumericProperty, BooleanProperty
 from kivy.uix.button import Button
+from kivy.uix.dropdown import DropDown
 from kivy.uix.textinput import TextInput
 from kivy.uix.label import Label
 from kivy.uix.floatlayout import FloatLayout
@@ -39,9 +37,7 @@ class PlayerNumButton(Button):
     def on_press(self):
         buttons = self.parent.parent.buttons
         player_num_screen = buttons.parent.parent
-        if buttons.one == self:
-            player_num_screen.set_num_players(1)
-        elif buttons.two == self:
+        if buttons.two == self:
             player_num_screen.set_num_players(2)
         elif buttons.three == self:
             player_num_screen.set_num_players(3)
@@ -148,14 +144,16 @@ class GameScreen(Screen):
             self.base.die_basket.keepers.clear()
             self.base.buttons.roll.keeper_count.clear()
             self.base.dice.remove_dice(self.base.dice.children, turn=True)
-            self.base.update_display('round')
+            self.base.update_display('round', 'small')
             self.base.update_display('name', 'small')
-            self.base.update_display('total')
+            self.base.update_display('total', 'small')
 
         if not any([player.total_score >= 2000 for player in self.base.list_o_players]):
             temp = self.base.list_o_players.popleft()
             self.base.current_player = temp
             self.base.update_display('name', 'big')
+            self.base.update_display('total', 'big')
+            self.base.update_display('round', 'big')
             self.base.list_o_players.append(temp)
 
         else:
@@ -164,9 +162,19 @@ class GameScreen(Screen):
             self.base.update_display('name', 'big')
 
             if not self.base.list_o_players:
+                winners = sorted(self.base.list_o_winners, key=lambda x: x.total_score, reverse=True)
+                tie = [winners[0]] + [winner for winner in winners[1:] if winner.total_score == winners[0].total_score]
+                if len(tie) > 1:
+                    names = [win.name for win in tie]
+                    ties = ' and '.join(names)
+                    message = f'It\'s a Tie!\n{ties}\n' \
+                        f'Win with {winners[0].total_score} points!'
+                else:
+                    message = f'{winners[0].name} Wins!\nWith {winners[0].total_score} points!'
+
                 for screen in self.parent.screens:
                     if screen.name == 'results':
-                        screen.winners = [*self.base.list_o_winners]
+                        screen.message = message
                 self.parent.current = 'results'
 
     def on_enter(self, *args):
@@ -197,19 +205,13 @@ class GameScreen(Screen):
 
 class ResultsScreen(Screen):
     winners = ListProperty()
+    message = StringProperty()
 
     def __init__(self, **kwargs):
         super(ResultsScreen, self).__init__(**kwargs)
 
-    def get_winners(self):
-        for screen in self.parent.screens:
-            if screen.name == 'game':
-                self.winners = screen.list_o_winners
-
     def on_enter(self, *args):
-        winners = sorted(self.winners, key=lambda x: x.total_score, reverse=True)
-
-        self.add_widget(Label(text=f'{winners[0].name} wins !!\n\nWith {winners[0].total_score} points!',
+        self.add_widget(Label(text=self.message,
                               color=rgba(colors['text']),
                               halign='center',
                               font_size=40,
@@ -510,7 +512,7 @@ class Base(FloatLayout):
         if font_size == 'big':
             player_area.markup = True
             player_area.text = f'[u]{self.current_player.name}[/u]'
-            player_area.font_size = 25
+            player_area.font_size = 30
             player_area.bold = True
         elif font_size == 'small':
             player_area.markup = False
@@ -540,11 +542,11 @@ class Base(FloatLayout):
 
     def update_progress_display(self, player_area):
         player_area.bold = True
-        player_area.text = f'{self.parent.turn} / 5'
+        player_area.text = f'{self.parent.turn} / {self.parent.turn_limit}'
 
     def update_solo_total_display(self, player_area):
         player_area.bold = True
-        player_area.text = f'{self.current_player.total_score} / 5000'
+        player_area.text = f'{self.current_player.total_score} / {self.parent.point_goal}'
 
 
 class DieHolder(Widget):
@@ -597,7 +599,7 @@ class SoloGameButton(Button):
         for screen in self.parent.parent.parent.screens:
             if screen.name == 'number':
                 screen.num_players = 1
-        self.parent.parent.parent.current = 'name'
+        self.parent.parent.parent.current = 'goal'
 
 
 class SoloPLayerScore(BoxLayout):
@@ -605,9 +607,78 @@ class SoloPLayerScore(BoxLayout):
         super(SoloPLayerScore, self).__init__(**kwargs)
 
 
+class PointGoal(DropDown):
+    def __init__(self, **kwargs):
+        super(PointGoal, self).__init__(**kwargs)
+
+    def select(self, data):
+        self.parent.children[1].children[0].point_goal = data
+
+
+class TurnGoal(DropDown):
+    def __init__(self, **kwargs):
+        super(TurnGoal, self).__init__(**kwargs)
+
+    def select(self, data):
+        self.parent.children[1].children[0].turn_limit = data
+
+
+class SoloGoalScreen(Screen):
+    point_goal = NumericProperty()
+    turn_limit = NumericProperty()
+
+    def __init__(self, **kwargs):
+        super(SoloGoalScreen, self).__init__(**kwargs)
+
+    def on_enter(self):
+        point_button = Button(pos_hint={'x': .1, 'y': .65},
+                              size_hint=(.3, .1),
+                              text='Set Points Goal',
+                              font_size=30,
+                              background_normal='',
+                              background_color=rgba(colors['prime dark']))
+        turn_button = Button(pos_hint={'x': .6, 'y': .65},
+                             size_hint=(.3, .1),
+                             text='Set Max Turns',
+                             font_size=30,
+                             background_normal='',
+                             background_color=rgba(colors['prime dark']))
+        self.add_widget(point_button)
+        self.add_widget(turn_button)
+
+        point_drop = PointGoal()
+        for x in [2500, 5000, 7500, 10000, 15000]:
+            btn = Button(text=str(x),
+                         size_hint_y=None,
+                         height=44,
+                         background_normal='',
+                         background_color=rgba(colors['second light']))
+            btn.bind(on_release=lambda btn: point_drop.select(int(btn.text)))
+            point_drop.add_widget(btn)
+        point_button.bind(on_release=point_drop.open)
+        turn_drop = TurnGoal()
+        for x in [5, 10, 20, 30, 40]:
+            btn = Button(text=str(x),
+                         size_hint_y=None,
+                         height=44,
+                         background_normal='',
+                         background_color=rgba(colors['second light']))
+            btn.bind(on_release=lambda btn: turn_drop.select(int(btn.text)))
+            turn_drop.add_widget(btn)
+        turn_button.bind(on_release=turn_drop.open)
+
+    def on_point_goal(self, thing, stuff):
+        self.goals.points.text = f'Points goal: {self.point_goal}'
+
+    def on_turn_limit(self, thing, stuff):
+        self.goals.turns.text = f'Turn limit: {self.turn_limit}'
+
+
 class SoloGameScreen(Screen):
     base = ObjectProperty()
     turn = NumericProperty(0)
+    point_goal = NumericProperty()
+    turn_limit = NumericProperty()
 
     def __init__(self, **kwargs):
         super(SoloGameScreen, self).__init__(**kwargs)
@@ -625,17 +696,26 @@ class SoloGameScreen(Screen):
         self.base.update_display('round')
         self.base.update_display('progress')
         self.base.update_display('solo total')
-        self.turn += 1
 
-        if self.base.current_player.total_score >= 5000 or self.turn > 5:
+        if self.base.current_player.total_score >= self.point_goal or self.turn > self.turn_limit:
+            if self.base.current_player.total_score >= self.point_goal:
+                message = f'{self.base.current_player.name} Wins!!\nWith {self.base.current_player.total_score} points!!'
+            else:
+                message = f'Oh no, {self.base.current_player.name}!\n' \
+                    f'You\'re out of turns\nand only got {self.base.current_player.total_score} points.'
             for screen in self.parent.screens:
                 if screen.name == 'results':
-                    screen.winners = [self.base.current_player]
+                    screen.message = message
             self.parent.current = 'results'
+        self.turn += 1
 
     def on_enter(self, *args):
         self.base.get_active_game()
         self.base.get_active_game_players()
+        for screen in self.parent.screens:
+            if screen.name == 'goal':
+                self.point_goal = screen.point_goal
+                self.turn_limit = screen.turn_limit
 
         player = self.base.list_o_players[0]
         self.base.current_player = player
@@ -655,9 +735,10 @@ class SoloGameScreen(Screen):
         round_area.text = f'Round: {str(0)}'
 
         total_area.bold = True
-        total_area.text = f'Total: {str(0)}'
+        total_area.text = f'Total: {str(0)} / {self.point_goal}'
 
         prog_area.bold = True
+        prog_area.text = f'Turns: {self.turn} / {self.turn_limit}'
 
         self.base.score_area.add_widget(player_score)
         self.set_current_player()
@@ -669,6 +750,7 @@ class Screens(ScreenManager):
 
         self.add_widget(MenuScreen(name='menu'))
         self.add_widget(PlayerNumberScreen(name='number'))
+        self.add_widget(SoloGoalScreen(name='goal'))
         self.add_widget(SoloGameScreen(name='solo'))
         self.add_widget(PlayerNameScreen(name='name'))
         self.add_widget(GameScreen(name='game'))
