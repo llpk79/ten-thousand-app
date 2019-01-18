@@ -170,7 +170,7 @@ class GameScreen(Screen):
                     message = f'It\'s a Tie!\n{ties}\n' \
                         f'Win with {winners[0].total_score} points!'
                 else:
-                    message = f'{winners[0].name} Wins!\nWith {winners[0].total_score} points!'
+                    message = f'{winners[0].name} Wins!\n\nWith {winners[0].total_score} points!'
 
                 for screen in self.parent.screens:
                     if screen.name == 'results':
@@ -204,7 +204,6 @@ class GameScreen(Screen):
 
 
 class ResultsScreen(Screen):
-    winners = ListProperty()
     message = StringProperty()
 
     def __init__(self, **kwargs):
@@ -329,7 +328,7 @@ class Dice(Widget):
         roll = [randint(1, 6) for _ in range(num_dice)]
 
         for x, pos in zip(roll, positions[:num_dice + 1]):
-            scatter = DieScatter(id=str(x), scale=.8)
+            scatter = DieScatter(id=str(x), scale_max=.8, scale=.7)
             image = Image(source=die_images[x])
 
             scatter.add_widget(image)
@@ -699,10 +698,11 @@ class SoloGameScreen(Screen):
 
         if self.base.current_player.total_score >= self.point_goal or self.turn > self.turn_limit:
             if self.base.current_player.total_score >= self.point_goal:
-                message = f'{self.base.current_player.name} Wins!!\nWith {self.base.current_player.total_score} points!!'
+                message = f'{self.base.current_player.name} wins!\n\n' \
+                    f'With {self.base.current_player.total_score} points!\n\nIn {self.turn - 1} turns!'
             else:
-                message = f'Oh no, {self.base.current_player.name}!\n' \
-                    f'You\'re out of turns\nand only got {self.base.current_player.total_score} points.'
+                message = f'Oh no, {self.base.current_player.name}!\n\n' \
+                    f'You\'re out of turns\n\nand only got {self.base.current_player.total_score} points.'
             for screen in self.parent.screens:
                 if screen.name == 'results':
                     screen.message = message
@@ -762,6 +762,7 @@ class Screens(ScreenManager):
 class GameApp(App):
 
     def build(self):
+        self.title = 'Ten Thousand'
         return self.root
 
 
