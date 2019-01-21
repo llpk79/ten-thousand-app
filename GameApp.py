@@ -133,74 +133,131 @@ class GameScreen(Screen):
     def __init__(self, **kwargs):
         super(GameScreen, self).__init__(**kwargs)
 
-    def set_current_player(self):
-        if self.base.current_player is not None:
-            self.base.update_round_score(red=True)
-            self.base.update_total_score()
-            self.base.die_basket.valid_basket = rgba(colors['valid'])
-            self.base.buttons.roll.update_color()
-            self.base.buttons.roll.text = 'Roll \'em!'
-            self.base.current_player.round_score = 0
-            self.base.die_basket.keepers.clear()
-            self.base.buttons.roll.keeper_count.clear()
-            self.base.dice.remove_dice(self.base.dice.children, turn=True)
-            self.base.update_display('round', 'small')
-            self.base.update_display('name', 'small')
-            self.base.update_display('total', 'small')
+    def on_enter(self, *args):
+        self.base.get_active_game()
+        self.base.get_active_game_players()
 
-        if not any([player.total_score >= 2000 for player in self.base.list_o_players]):
+        for player in self.base.list_o_players:
+            player_score = PlayerScore(id=player.name, )
+
+            name_area = player_score.name
+            round_area = player_score.round
+            total_area = player_score.total
+            total_plus_area = player_score.total_plus
+
+            name_area.font_size = 32
+            name_area.bold = True
+            name_area.text = player.name.title()
+
+            round_area.text = f'Round: {str(0)}'
+            total_area.text = f'Total: {str(0)}'
+            total_plus_area.text = f'Total + Round: {str(0)}'
+
+            player.score_display = player_score
+
+        self.base.score_area.add_widget(self.base.list_o_players[0].score_display)
+        self.set_current_player()
+
+    def set_current_player(self):
+
+        if not self.base.current_player:
             temp = self.base.list_o_players.popleft()
             self.base.current_player = temp
-            self.base.update_display('name', 'big')
-            self.base.update_display('total', 'big')
-            self.base.update_display('round', 'big')
             self.base.list_o_players.append(temp)
 
+            # TODO: Make functions for indicator animation
+            player_total_area = [child for child in self.base.info.box.children
+                                 if child.id == self.base.current_player.name][0]
+            indicator_pos = [child for child in player_total_area.children if child.id == 'turn'][0]
+            indicator = self.base.info.children[0]
+            anim_2 = Animation(pos=indicator_pos.pos, d=.25)
+            anim_2 &= Animation(scale=.25, d=.2)
+            anim_2.start(indicator)
+            return
+
+        self.base.update_round_score(red=True)
+        self.base.update_total_score()
+        self.base.die_basket.valid_basket = rgba(colors['valid'])
+        self.base.buttons.roll.update_color()
+        self.base.buttons.roll.text = 'Roll \'em!'
+        self.base.current_player.round_score = 0
+        self.base.die_basket.keepers.clear()
+        self.base.buttons.roll.proto_keepers.clear()
+        self.base.dice.remove_dice(self.base.dice.children, turn=True)
+        self.base.update_display('name')
+        self.base.update_display('total')
+        self.base.update_display('round')
+        self.base.update_display('basket')
+        self.base.buttons.end_turn.disabled = True
+
+        if not any([player.total_score >= 2000 for player in self.base.list_o_players]):
+            # TODO: Create function for display animation.
+            curr_display = self.base.current_player.score_display
+            anim = Animation(pos=(self.base.score_area.x + 4, 550), d=.25)
+            anim.bind(on_complete=lambda animation, display: self.change_score_display(display))
+            anim.start(curr_display)
+
+            temp = self.base.list_o_players.popleft()
+            self.base.current_player = temp
+            self.base.list_o_players.append(temp)
+
+            player_total_area = [child for child in self.base.info.box.children
+                                 if child.id == self.base.current_player.name][0]
+            indicator_pos = [child for child in player_total_area.children if child.id == 'turn'][0]
+            indicator = self.base.info.children[0]
+            anim_1 = Animation(pos=indicator_pos.pos, d=.25)
+            anim_1.start(indicator)
+
         else:
+            curr_display = self.base.current_player.score_display
+            anim = Animation(pos=(self.base.score_area.x + 4, 550), d=.25)
+            anim.bind(on_complete=lambda animation, display: self.change_score_display(display))
+            anim.start(curr_display)
+
             self.base.list_o_winners.append(self.base.current_player)
             self.base.current_player = self.base.list_o_players.popleft()
-            self.base.update_display('name', 'big')
+
+            player_total_area = [child for child in self.base.info.box.children
+                                 if child.id == self.base.current_player.name][0]
+            indicator_pos = [child for child in player_total_area.children if child.id == 'turn'][0]
+            indicator = self.base.info.children[0]
+            anim_1 = Animation(pos=indicator_pos.pos, d=.25)
+            anim_1.start(indicator)
 
             if not self.base.list_o_players:
                 winners = sorted(self.base.list_o_winners, key=lambda x: x.total_score, reverse=True)
                 tie = [winners[0]] + [winner for winner in winners[1:] if winner.total_score == winners[0].total_score]
+
                 if len(tie) > 1:
-                    names = [win.name for win in tie]
+                    names = [win.name.title() for win in tie]
                     ties = ' and '.join(names)
                     message = f'It\'s a Tie!\n{ties}\n' \
                         f'Win with {winners[0].total_score} points!'
                 else:
-                    message = f'{winners[0].name} Wins!\n\nWith {winners[0].total_score} points!'
+                    message = f'{winners[0].name.title()} Wins!\n\nWith {winners[0].total_score} points!'
 
                 for screen in self.parent.screens:
                     if screen.name == 'results':
                         screen.message = message
                 self.parent.current = 'results'
 
-    def on_enter(self, *args):
-        self.base.get_active_game()
-        self.base.get_active_game_players()
+    def change_score_display(self, score_area):
+        size, pos = score_area.size, score_area.pos
+        self.base.score_area.remove_widget(score_area)
 
-        for i, player in enumerate(self.base.list_o_players):
-            player_score = PlayerScore(id=player.name)
+        new_display = self.base.current_player.score_display
+        self.base.add_widget(new_display)
 
-            name_area = player_score.name
-            round_area = player_score.round
-            total_area = player_score.total
-            if i == 0:
-                name_area.text = f'[u]{player.name}[/u]'
-                name_area.font_size = 32
-                name_area.bold = True
-                round_area.bold = True
-                total_area.bold = True
-            else:
-                name_area.text = player.name
-                name_area.font_size = 22
-            round_area.text = f'Round: {str(0)}'
-            total_area.text = f'Total: {str(0)}'
+        new_display.size_hint_x = .692
+        new_display.pos = (pos[0], 555)
+        anim = Animation(pos=(self.base.score_area.x + 4, self.base.score_area.y + 4), d=.25)
+        anim.bind(on_complete=lambda x, y: self.finish_score_display_change(y))
+        anim.start(new_display)
 
-            self.base.score_area.add_widget(player_score)
-        self.set_current_player()
+    def finish_score_display_change(self, new_display):
+        self.base.remove_widget(new_display)
+        self.base.score_area.add_widget(new_display)
+        self.base.buttons.end_turn.disabled = False
 
 
 class ResultsScreen(Screen):
@@ -237,6 +294,7 @@ class DieScatter(Scatter):
         if self.collide_point(*touch.pos):
             if self.locked:
                 return True
+
             self.scale += .1
             touch.grab(self)
             self.touch = touch
@@ -268,12 +326,12 @@ class DieScatter(Scatter):
     def add_to_keepers(self):
         die_basket = self.parent.parent.die_basket
         keepers = die_basket.keepers
-        keeper_count = self.parent.parent.buttons.roll.keeper_count
+        proto_keepers = self.parent.parent.buttons.roll.proto_keepers
         die_holders = die_basket.keeper_box.children
 
         if self not in keepers:
             keepers.append(self)
-            die_holder = die_holders[(len(keepers) + len(keeper_count)) - 1]
+            die_holder = die_holders[(len(keepers) + len(proto_keepers)) - 1]
 
             anim = Animation(pos=(die_holder.pos[0] + 20, die_holder.pos[1]), d=0.5, t='out_quart')
             if self.rotation <= 180:
@@ -281,21 +339,22 @@ class DieScatter(Scatter):
             else:
                 anim &= Animation(rotation=360, d=0.5)
             anim.start(self)
+
         else:
-            for die_holder, keeper in zip(die_holders[len(keeper_count):], keepers):
+            for die_holder, keeper in zip(die_holders[len(proto_keepers):], keepers):
                 anim = Animation(pos=(die_holder.pos[0] + 20, die_holder.pos[1]), d=0.2)
                 anim.start(keeper)
 
     def remove_from_keepers(self):
         die_basket = self.parent.parent.die_basket
         keepers = die_basket.keepers
-        keeper_count = self.parent.parent.buttons.roll.keeper_count
+        proto_keepers = self.parent.parent.buttons.roll.proto_keepers
         die_holders = die_basket.keeper_box.children
 
         if self in keepers:
             keepers.remove(self)
 
-        for die_holder, keeper in zip(die_holders[len(keeper_count):], keepers):
+        for die_holder, keeper in zip(die_holders[len(proto_keepers):], keepers):
             anim = Animation(pos=(die_holder.pos[0] + 20, die_holder.pos[1]), d=0.2)
             anim.start(keeper)
 
@@ -310,7 +369,7 @@ class Dice(Widget):
     def update_dice(self, num_dice, turn=False):
         if not turn:
             self.remove_dice([widget for widget in self.children
-                              if widget not in self.parent.buttons.roll.keeper_count])
+                              if widget not in self.parent.buttons.roll.proto_keepers])
         else:
             self.remove_dice(self.children)
 
@@ -334,7 +393,7 @@ class Dice(Widget):
             scatter.add_widget(image)
             self.add_widget(scatter)
 
-            anim = Animation(pos=(self.parent.width * pos['x'], self.parent.height * pos['y']), d=0.5)
+            anim = Animation(pos=(self.parent.width * pos['x'] * .7, self.parent.height * pos['y']), d=0.5)
             anim &= Animation(rotation=randint(-360, 360), d=0.75)
             anim.start(scatter)
 
@@ -348,6 +407,53 @@ class Dice(Widget):
     def complete(self, die):
         if die.parent:
             die.parent.remove_widget(die)
+
+
+class Indicator(Scatter):
+    def __init__(self, **kwargs):
+        super(Indicator, self).__init__(**kwargs)
+        self.scale = .01
+        self.do_scale = False
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            return True
+
+
+class InformationStation(FloatLayout):
+    box = ObjectProperty()
+    active_game = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        super(InformationStation, self).__init__(**kwargs)
+
+    def add_player_totals(self):
+        base = self.parent
+        for i, player in enumerate(base.list_o_players):
+            lil_box = BoxLayout(id=player.name)
+            turn_indicator = Widget(id='turn',
+                                    size_hint=(.15, .1),
+                                    pos_hint={'x': 0, 'y': .375})
+            lil_box.add_widget(turn_indicator)
+
+            lil_box.add_widget(Label(id='name',
+                                     text=player.name.title(),
+                                     size_hint=(.4, 1),
+                                     font_size=22,
+                                     text_size=(lil_box.width, None),
+                                     shorten=True,
+                                     shorten_from='right'))
+            total = Label(id='total',
+                          text=str(player.total_score),
+                          font_size=22,
+                          size_hint=(.6, 1))
+            lil_box.add_widget(total)
+
+            self.box.add_widget(lil_box)
+
+        indicator = Indicator()
+        indicator.add_widget(Image(source=die_images[1]))
+        self.add_widget(indicator)
 
 
 class GameButtonRow(BoxLayout):
@@ -383,7 +489,7 @@ class KeepAll(Button):
     def on_press(self):
         dice = self.parent.parent.dice.children
         for die in dice:
-            if (die not in self.parent.parent.buttons.roll.keeper_count and
+            if (die not in self.parent.parent.buttons.roll.proto_keepers and
                     die not in self.parent.parent.die_basket.keepers):
                 die.add_to_keepers()
 
@@ -398,7 +504,7 @@ class EndTurn(Button):
 
 
 class Roll(Button):
-    keeper_count = ListProperty()
+    proto_keepers = ListProperty()
 
     def __init__(self, **kwargs):
         super(Roll, self).__init__(**kwargs)
@@ -408,19 +514,19 @@ class Roll(Button):
 
         if die_basket.valid_basket == rgba(colors['valid']):
             for keeper in die_basket.keepers:
-                self.keeper_count.append(keeper)
-            if len(self.keeper_count) >= 6:
-                self.keeper_count.clear()
-            self.parent.parent.dice.update_dice(6 - len(self.keeper_count))
+                self.proto_keepers.append(keeper)
+            if len(self.proto_keepers) >= 6:
+                self.proto_keepers.clear()
+            self.parent.parent.dice.update_dice(6 - len(self.proto_keepers))
 
         self.parent.parent.update_round_score()
 
-        for keeper in self.keeper_count:
+        for keeper in self.proto_keepers:
             keeper.locked = True
 
         for keeper in die_basket.keepers:
             gray = InstructionGroup()
-            gray.add(Color(.9, .9, .9,  .5))
+            gray.add(Color(.9, .9, .9, .5))
             gray.add(Rectangle(pos=(5, 7), size=(keeper.size[0] - 15, keeper.size[1] - 15)))
             keeper.canvas.add(gray)
 
@@ -451,6 +557,7 @@ class Base(FloatLayout):
     list_o_players = deque()
     current_player = ObjectProperty()
     list_o_winners = ListProperty()
+    info = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(Base, self).__init__(**kwargs)
@@ -464,6 +571,7 @@ class Base(FloatLayout):
     def get_active_game_players(self):
         for player in self.active_game.player_list:
             self.list_o_players.append(player)
+        self.info.add_player_totals()
         return self.list_o_players
 
     def update_round_score(self, red=None):
@@ -491,61 +599,43 @@ class Base(FloatLayout):
         else:
             self.current_player.round_score = 0
 
-    def update_display(self, score_type, font_size=None):
-        for player_score in self.score_area.children:
-            if player_score.id == self.current_player.name:
-                player_area = player_score
+    def update_display(self, score_type):
+        info_area = [child for child in self.info.box.children if child.id is self.current_player.name][0]
+        total_area = [child for child in info_area.children if child.id is 'total'][0]
+        player_area = self.current_player.score_display
 
-        if score_type == 'name':
-            self.update_name_display(player_area.name, font_size)
         if score_type == 'round' or score_type == 'basket':
-            self.update_round_display(player_area.round, score_type, font_size)
+            self.update_round_display(player_area, score_type)
         if score_type == 'total':
-            self.update_total_display(player_area.total, font_size)
+            self.update_total_display(player_area.total, total_area)
         if score_type == 'progress':
             self.update_progress_display(player_area.progress)
         if score_type == 'solo total':
-            self.update_solo_total_display(player_area.total)
+            self.update_solo_total_display(total_area)
 
-    def update_name_display(self, player_area, font_size):
-        if font_size == 'big':
-            player_area.markup = True
-            player_area.text = f'[u]{self.current_player.name}[/u]'
-            player_area.font_size = 30
-            player_area.bold = True
-        elif font_size == 'small':
-            player_area.markup = False
-            player_area.text = self.current_player.name
-            player_area.font_size = 22
-            player_area.bold = False
-
-    def update_round_display(self, player_area, score_type, font_size):
-        if font_size == 'big':
-            player_area.bold = True
-        elif font_size == 'small':
-            player_area.bold = False
+    def update_round_display(self, player_area, score_type):
 
         if score_type == 'basket':
-            player_area.text = 'Round: {}'.format(str(self.current_player.round_score +
-                                                      self.die_basket.basket_score))
+            player_area.round.text = 'Round: {}'.format(str(self.current_player.round_score +
+                                                            self.die_basket.basket_score))
+            player_area.total_plus.text = 'Total + Round: {}'.format(str(self.current_player.total_score +
+                                                                         self.current_player.round_score +
+                                                                         self.die_basket.basket_score))
         if score_type == 'round':
-            player_area.text = f'Round: {str(self.current_player.round_score)}'
+            player_area.round.text = f'Round: {str(self.current_player.round_score)}'
 
-    def update_total_display(self, player_area, font_size):
-        if font_size == 'big':
-            player_area.bold = True
-        elif font_size == 'small':
-            player_area.bold = False
-
+    def update_total_display(self, player_area, total_area):
+        total_area.text = str(self.current_player.total_score)
         player_area.text = f'Total: {str(self.current_player.total_score)}'
 
     def update_progress_display(self, player_area):
         player_area.bold = True
         player_area.text = f'{self.parent.turn} / {self.parent.turn_limit}'
 
-    def update_solo_total_display(self, player_area):
-        player_area.bold = True
-        player_area.text = f'{self.current_player.total_score} / {self.parent.point_goal}'
+    def update_solo_total_display(self, total_area):
+        # total_area.size = total_area.texture_size
+        # total_area.size_hint = (.5, 1)
+        total_area.text = f'{self.current_player.total_score} / {self.parent.point_goal}'
 
 
 class DieHolder(Widget):
@@ -630,13 +720,13 @@ class SoloGoalScreen(Screen):
         super(SoloGoalScreen, self).__init__(**kwargs)
 
     def on_enter(self):
-        point_button = Button(pos_hint={'x': .1, 'y': .65},
+        point_button = Button(pos_hint={'x': .1, 'y': .8},
                               size_hint=(.3, .1),
                               text='Set Points Goal',
                               font_size=30,
                               background_normal='',
                               background_color=rgba(colors['prime dark']))
-        turn_button = Button(pos_hint={'x': .6, 'y': .65},
+        turn_button = Button(pos_hint={'x': .6, 'y': .8},
                              size_hint=(.3, .1),
                              text='Set Max Turns',
                              font_size=30,
@@ -690,7 +780,7 @@ class SoloGameScreen(Screen):
         self.base.buttons.roll.text = 'Roll \'em!'
         self.base.current_player.round_score = 0
         self.base.die_basket.keepers.clear()
-        self.base.buttons.roll.keeper_count.clear()
+        self.base.buttons.roll.proto_keepers.clear()
         self.base.dice.remove_dice(self.base.dice.children, turn=True)
         self.base.update_display('round')
         self.base.update_display('progress')
@@ -698,10 +788,10 @@ class SoloGameScreen(Screen):
 
         if self.base.current_player.total_score >= self.point_goal or self.turn > self.turn_limit:
             if self.base.current_player.total_score >= self.point_goal:
-                message = f'{self.base.current_player.name} wins!\n\n' \
+                message = f'{self.base.current_player.name.title()} wins!\n\n' \
                     f'With {self.base.current_player.total_score} points!\n\nIn {self.turn - 1} turns!'
             else:
-                message = f'Oh no, {self.base.current_player.name}!\n\n' \
+                message = f'Oh no, {self.base.current_player.name.title()}!\n\n' \
                     f'You\'re out of turns\n\nand only got {self.base.current_player.total_score} points.'
             for screen in self.parent.screens:
                 if screen.name == 'results':
@@ -723,24 +813,22 @@ class SoloGameScreen(Screen):
 
         name_area = player_score.name
         round_area = player_score.round
-        total_area = player_score.total
+        total_plus_area = player_score.total_plus
         prog_area = player_score.progress
 
-        name_area.markup = True
-        name_area.text = f'[u]{player.name}[/u]'
+        name_area.text = player.name.title()
         name_area.font_size = 32
         name_area.bold = True
 
-        round_area.bold = True
         round_area.text = f'Round: {str(0)}'
 
-        total_area.bold = True
-        total_area.text = f'Total: {str(0)} / {self.point_goal}'
+        total_plus_area.text = 'Total + Round: 0'
 
-        prog_area.bold = True
         prog_area.text = f'Turns: {self.turn} / {self.turn_limit}'
 
-        self.base.score_area.add_widget(player_score)
+        player.score_display = player_score
+
+        self.base.score_area.add_widget(player.score_display)
         self.set_current_player()
 
 
