@@ -143,7 +143,7 @@ ScreenManager:
 
 <DieBasket>:
     keeper_box: keeper_box
-    size_hint: 1, 0.4
+    size_hint: .7, 0.4
     pos_hint: {'x': 0.0, 'y': 0.7}
     canvas.after:
         Color:
@@ -182,24 +182,65 @@ ScreenManager:
             size: self.size
 
 <PlayerScore>:
-    total: total
-    round: round
     name: name
+    round: round
+    total: total
+    total_plus: total_plus
     PlayerArea:
         id: name
         text_size: self.width, None
+        size_hint: .8, 1
         shorten: True
         shorten_from: 'right'
         halign: 'center'
     PlayerArea:
         id: round
+        size_hint: .55, 1
         halign: 'left'
     PlayerArea:
         id: total
-        halign: 'right'
+        size_hint: .6, 1
+        halign: 'left'
+    PlayerArea:
+        id: total_plus
+        size_hint: .85, 1
+        halign: 'left'
+
+<InformationStation>:
+    box: box
+    orientation: 'vertical'
+    size_hint: .3, 1
+    pos_hint: {'x': .7, 'y': 0}
+    padding: [1]
+    spacing: 5
+    canvas:
+        Color:
+            rgba: rgba(colors['second'])
+        Rectangle:
+            size: root.size
+            pos: root.pos
+    Label:
+        text: 'Player Totals'
+        font_size: 25
+        size_hint: .95, .1
+        pos_hint: {'x': .025, 'y': .875}
+        canvas.before:
+            Color:
+                rgba: rgba(colors['second light'])
+            Rectangle
+                size: self.size
+                pos: self.pos
+    BoxLayout:
+        id: box
+        size_hint: 1, .4
+        pos_hint: {'x': .05, 'y': .5}
+        orientation: 'vertical'
+    RulesButton:
+        size_hint: .95, .1
+        pos_hint: {'x': .025, 'y': .025}
 
 <ScoreArea>:
-    size_hint: 1, 0.1
+    size_hint: .7, 0.1
     pos_hint: {'x': 0, 'y': 0.9}
     spacing: 4
     padding: [4]
@@ -212,14 +253,15 @@ ScreenManager:
     background_color: rgba(colors['second dark'])
 
 <EndTurn>:
-    text: 'End Turn'
+    text: 'Keep Points\nEnd Turn'
     color: rgba(colors['text'])
-    font_size: 35
+    halign: 'center'
+    font_size: 25
     background_normal: ''
     background_color: rgba(colors['second dark'])
 
 <KeepAll>:
-    text: 'Keep All'
+    text: 'Select All'
     color: rgba(colors['text'])
     font_size: 35
     background_normal: ''
@@ -233,7 +275,7 @@ ScreenManager:
     background_color: rgba(colors['second dark'])
 
 <GameButtonRow>:
-    size_hint: 1, .15
+    size_hint: .7, .15
     pos_hint: {'x': 0, 'y': 0}
     padding: [10]
     spacing: 10
@@ -243,7 +285,11 @@ ScreenManager:
     die_basket: die_basket
     dice: dice
     buttons: buttons
+    info: info
     Background:
+    InformationStation:
+        id: info
+        active_game: root.active_game
     ScoreArea:
         id: score_area
     DieBasket:
@@ -251,20 +297,18 @@ ScreenManager:
         active_game: root.active_game
     Dice:
         id: dice
+        size_hint: .7, None
     GameButtonRow:
         id: buttons
         roll: roll
         end_turn: end_turn
         keep: keep
-        rules: rules
         Roll:
             id: roll
-        EndTurn:
-            id: end_turn
         KeepAll:
             id: keep
-        RulesButton:
-            id: rules
+        EndTurn:
+            id: end_turn
 
 <GameScreen>:
     name: 'game'
@@ -310,23 +354,27 @@ ScreenManager:
 <SoloPlayerScore>:
     name: name
     round: round
-    total: total
+    total_plus: total_plus
     progress: progress
     PlayerArea:
         id: name
         text_size: self.width, None
+        size_hint: .75, 1
         shorten: True
         shorten_from: 'right'
         halign: 'center'
     PlayerArea:
         id: round
+        size_hint: .5, 1
         halign: 'left'
     PlayerArea:
-        id: total
-        halign: 'right'
+        id: total_plus
+        size_hint: .7, 1
+        halign: 'left'
     PlayerArea:
         id: progress
-        halign: 'center'
+        size_hint: .3, 1
+        halign: 'left'
 
 <SoloGameScreen>:
     name: 'solo'
