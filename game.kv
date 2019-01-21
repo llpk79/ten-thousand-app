@@ -319,6 +319,7 @@ ScreenManager:
 <SoloGoalScreen>:
     name: 'goal'
     goals: goals
+    cont: cont
     Background:
     BoxLayout:
         id: goals
@@ -341,8 +342,9 @@ ScreenManager:
         Label
             id: diff
             font_size: 30
-            text: 'Difficulty level:'
+            text: 'Difficulty:'
     Button:
+        id: cont
         size_hint: .2, .1
         pos_hint: {'x': .4, 'y': .05}
         text: 'Continue'
@@ -350,6 +352,7 @@ ScreenManager:
         background_normal: ''
         background_color: rgba(colors['second dark'])
         on_release: root.parent.current = 'name'
+        disabled: True
 
 <SoloPlayerScore>:
     name: name

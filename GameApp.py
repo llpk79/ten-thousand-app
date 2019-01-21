@@ -702,6 +702,8 @@ class PointGoal(DropDown):
 
     def select(self, data):
         self.parent.children[1].children[0].point_goal = data
+        if self.parent.children[1].children[0].turn_limit:
+            self.parent.children[1].children[0].cont.disabled = False
 
 
 class TurnGoal(DropDown):
@@ -710,6 +712,8 @@ class TurnGoal(DropDown):
 
     def select(self, data):
         self.parent.children[1].children[0].turn_limit = data
+        if self.parent.children[1].children[0].point_goal:
+            self.parent.children[1].children[0].cont.disabled = False
 
 
 class SoloGoalScreen(Screen):
@@ -758,9 +762,30 @@ class SoloGoalScreen(Screen):
 
     def on_point_goal(self, thing, stuff):
         self.goals.points.text = f'Points goal: {self.point_goal}'
+        if self.turn_limit:
+            self.set_difficulty()
 
     def on_turn_limit(self, thing, stuff):
         self.goals.turns.text = f'Turn limit: {self.turn_limit}'
+        if self.point_goal:
+            self.set_difficulty()
+
+    def set_difficulty(self):
+        points_per_turn = self.point_goal // self.turn_limit
+        print(points_per_turn)
+        if 0 < points_per_turn <= 125:
+            diff = 'Difficulty: Really Easy'
+        elif 125 < points_per_turn <= 175:
+            diff = 'Difficulty: Easy'
+        elif 175 < points_per_turn <= 250:
+            diff = 'Difficulty: Medium'
+        elif 250 < points_per_turn <= 500:
+            diff = 'Difficulty: Hard'
+        elif 500 < points_per_turn <= 750:
+            diff = 'Difficulty: Really Hard'
+        elif points_per_turn > 750:
+            diff = 'Difficulty: Possible'
+        self.goals.diff.text = diff
 
 
 class SoloGameScreen(Screen):
