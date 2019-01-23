@@ -44,16 +44,48 @@ class PlayerNumButton(Button):
         return True
 
 
+class PlayerNumDropDown(DropDown):
+    def __init__(self, **kwargs):
+        super(PlayerNumDropDown, self).__init__(**kwargs)
+
+    def select(self, data):
+        [child for child in self.parent.children[1].children][0].num_players = data
+        self.dismiss()
+
+
 class PlayerNumberScreen(Screen):
-    num_players = ObjectProperty()
+    num_players = NumericProperty()
 
     def __init__(self, **kwargs):
         super(PlayerNumberScreen, self).__init__(**kwargs)
 
-    def set_num_players(self, num_players):
+    def on_num_players(self, other, num_players):
         if num_players:
             self.num_players = num_players
-            self.parent.current = 'name'
+            self.set_label()
+
+    def on_enter(self):
+        player_num_button = Button(text='Set Number\nof Players',
+                                   size_hint=(.3, .1),
+                                   pos_hint={'x': .35, 'y': .65},
+                                   background_normal='',
+                                   background_color=rgba(colors['second dark']))
+        self.add_widget(player_num_button)
+        num_drop = PlayerNumDropDown()
+        for i, num in zip(list(range(2, 7)), ['two', 'three', 'four', 'five', 'six']):
+            btn = Button(text=num,
+                         id=str(i),
+                         size_hint_y=None,
+                         height=44,
+                         background_normal='',
+                         background_color=rgba(colors['second light']))
+            btn.bind(on_release=lambda button: num_drop.select(int(button.id)))
+            num_drop.add_widget(btn)
+        player_num_button.bind(on_release=num_drop.open)
+
+    def set_label(self):
+        self.num_label.text = f'Players Selected: {self.num_players}'
+        self.cont.disabled = False
 
 
 class FocusInput(TextInput):
@@ -93,18 +125,17 @@ class PlayerNameScreen(Screen):
 
     def on_enter(self):
         self.get_num_players()
-
         for i in range(1, self.num_players + 1):
             label = Label(text=f'Enter Player {i}\'s name:',
                           font_size=30,
                           color=rgba(colors['text']),
-                          pos_hint={'x': .15, 'y': .85 - (i * .2)},
+                          pos_hint={'x': .15, 'y': .4 + (self.num_players / 10) - (i * .15)},
                           size_hint=(.25, .1),
                           id=str(i))
             self.add_widget(label)
             input_name = (FocusInput(multiline=False,
                                      font_size=30,
-                                     pos_hint={'x': .475, 'y': .85 - (i * .2)},
+                                     pos_hint={'x': .475, 'y': .4 + (self.num_players / 10) - (i * .15)},
                                      size_hint=(.35, .09)))
             if i == 1:
                 input_name.focus = True
@@ -871,10 +902,10 @@ class SoloGameScreen(Screen):
             for screen in self.parent.screens:
                 if screen.name == 'results':
                     screen.message = message
-            self.result_screen()
+            self.results_screen()
         self.turn += 1
 
-    def result_screen(self):
+    def results_screen(self):
         self.parent.current = 'results'
 
 

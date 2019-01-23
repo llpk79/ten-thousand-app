@@ -112,33 +112,33 @@ ScreenManager:
     background_color: rgba(colors['prime dark'])
 
 <PlayerNumberScreen>:
+    num_label: num_label
+    cont: cont
     name: 'number'
-    layout: layout
-    FloatLayout:
-        buttons: buttons
-        id: layout
-        Background:
-        Label:
-            text: 'How many people are playing?\nUp to three can play.'
-            halign: 'center'
-            font_size: 40
-            color: rgba(colors['text'])
-            size_hint: (.275, .075)
-            pos_hint: {'x': .35, 'y': .7}
-        BoxLayout:
-            two: two
-            three: three
-            id: buttons
-            size_hint: .5, .2
-            pos_hint: {'x': .25, 'y': .4}
-            spacing: 5
-            padding: [5]
-            PlayerNumButton:
-                id: two
-                text: 'Two'
-            PlayerNumButton:
-                id: three
-                text: 'Three'
+    Background:
+    Label:
+        text: 'How many people are playing?'
+        halign: 'center'
+        font_size: 40
+        color: rgba(colors['text'])
+        size_hint: (.275, .075)
+        pos_hint: {'x': .35, 'y': .8}
+    Label:
+        id: num_label
+        text: 'Players Selected: '
+        font_size: 30
+        size_hint: .2, .1
+        pos_hint: {'x': .4, 'y': .15}
+    Button:
+        id: cont
+        size_hint: .2, .1
+        pos_hint: {'x': .4, 'y': .05}
+        text: 'Continue'
+        font_size: 30
+        background_normal: ''
+        background_color: rgba(colors['second dark'])
+        on_release: root.parent.current = 'name'
+        disabled: True
 
 <DieHolder>:
 
@@ -235,8 +235,8 @@ ScreenManager:
                 pos: self.pos
     BoxLayout:
         id: box
-        size_hint: 1, .4
-        pos_hint: {'x': .05, 'y': .5}
+        size_hint: 1, .6
+        pos_hint: {'x': .05, 'y': .2}
         orientation: 'vertical'
     RulesButton:
         size_hint: .95, .1
