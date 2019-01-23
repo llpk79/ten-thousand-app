@@ -55,13 +55,13 @@ ScreenManager:
             font_size: 35
             color: rgba(colors['text'])
             size_hint: .4, .1
-            pos_hint: {'x': .3, 'y': .6}
+            pos_hint: {'x': .295, 'y': .65}
         Label:
             text: 'A dice game'
             font_size: 20
             color: rgba(colors['text'])
             size_hint: .2, .1
-            pos_hint: {'x': .4, 'y': .55}
+            pos_hint: {'x': .4, 'y': .575}
         Button:
             text: 'Play With Friends!'
             color: rgba(colors['text'])
@@ -83,23 +83,26 @@ ScreenManager:
 
 <ResultsScreen>:
     name: 'results'
-    FloatLayout:
-        Background:
+    Background:
+    BoxLayout:
+        size_hint: .5, .15
+        pos_hint: {'x': .25, 'y': .2}
+        spacing: 5
+        padding: [5]
         Button:
             text: 'Play again?'
-            size_hint: (.15, .05)
-            pos_hint: {'x': .45, 'y': .2}
             on_press: root.play_again()
+            background_normal: ''
+            background_color: rgba(colors['second dark'])
         Button:
             text: 'Exit'
-            size_hint: (.15, .05)
-            pos_hint: {'x': .45, 'y': .09}
             on_press: root.exit()
+            background_normal: ''
+            background_color: rgba(colors['second dark'])
 
 <PlayerNameScreen>:
     name: 'name'
-    FloatLayout:
-        Background:
+    Background:
 
 <PlayerNumButton>:
     color: rgba(colors['text'])
@@ -362,17 +365,17 @@ ScreenManager:
     PlayerArea:
         id: name
         text_size: self.width, None
-        size_hint: .75, 1
+        size_hint: .4, 1
         shorten: True
         shorten_from: 'right'
         halign: 'center'
     PlayerArea:
         id: round
-        size_hint: .5, 1
+        size_hint: .3, 1
         halign: 'left'
     PlayerArea:
         id: total_plus
-        size_hint: .7, 1
+        size_hint: .5, 1
         halign: 'left'
     PlayerArea:
         id: progress

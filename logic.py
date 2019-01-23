@@ -100,6 +100,7 @@ class Player(object):
         self.round_score = 0
         self.name = name
         self.score_display = None
+        self.info = None
 
 
 def main():

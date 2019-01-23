@@ -46,7 +46,6 @@ class PlayerNumButton(Button):
 
 class PlayerNumberScreen(Screen):
     num_players = ObjectProperty()
-    layout = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(PlayerNumberScreen, self).__init__(**kwargs)
@@ -138,7 +137,8 @@ class GameScreen(Screen):
         self.base.get_active_game_players()
 
         for player in self.base.list_o_players:
-            player_score = PlayerScore(id=player.name, )
+            player_score = PlayerScore(id=player.name,
+                                       pos=(self.base.score_area.x, 550))
 
             name_area = player_score.name
             round_area = player_score.round
@@ -159,20 +159,12 @@ class GameScreen(Screen):
         self.set_current_player()
 
     def set_current_player(self):
-
-        if not self.base.current_player:
+        if not self.base.current_player or self.base.current_player.name == '':
             temp = self.base.list_o_players.popleft()
             self.base.current_player = temp
             self.base.list_o_players.append(temp)
 
-            # TODO: Make functions for indicator animation
-            player_total_area = [child for child in self.base.info.box.children
-                                 if child.id == self.base.current_player.name][0]
-            indicator_pos = [child for child in player_total_area.children if child.id == 'turn'][0]
-            indicator = self.base.info.children[0]
-            anim_2 = Animation(pos=indicator_pos.pos, d=.25)
-            anim_2 &= Animation(scale=.25, d=.2)
-            anim_2.start(indicator)
+            self.animate_indicator()
             return
 
         self.base.update_round_score(red=True)
@@ -190,42 +182,23 @@ class GameScreen(Screen):
         self.base.update_display('basket')
         self.base.buttons.end_turn.disabled = True
 
-        if not any([player.total_score >= 2000 for player in self.base.list_o_players]):
-            # TODO: Create function for display animation.
-            curr_display = self.base.current_player.score_display
-            anim = Animation(pos=(self.base.score_area.x + 4, 550), d=.25)
-            anim.bind(on_complete=lambda animation, display: self.change_score_display(display))
-            anim.start(curr_display)
+        if not any([player.total_score >= 500 for player in self.base.list_o_players]):
+            self.animate_score_out()
 
             temp = self.base.list_o_players.popleft()
             self.base.current_player = temp
             self.base.list_o_players.append(temp)
 
-            player_total_area = [child for child in self.base.info.box.children
-                                 if child.id == self.base.current_player.name][0]
-            indicator_pos = [child for child in player_total_area.children if child.id == 'turn'][0]
-            indicator = self.base.info.children[0]
-            anim_1 = Animation(pos=indicator_pos.pos, d=.25)
-            anim_1.start(indicator)
-
+            self.animate_indicator()
         else:
-            curr_display = self.base.current_player.score_display
-            anim = Animation(pos=(self.base.score_area.x + 4, 550), d=.25)
-            anim.bind(on_complete=lambda animation, display: self.change_score_display(display))
-            anim.start(curr_display)
+            self.animate_score_out()
 
             self.base.list_o_winners.append(self.base.current_player)
             self.base.current_player = self.base.list_o_players.popleft()
 
-            player_total_area = [child for child in self.base.info.box.children
-                                 if child.id == self.base.current_player.name][0]
-            indicator_pos = [child for child in player_total_area.children if child.id == 'turn'][0]
-            indicator = self.base.info.children[0]
-            anim_1 = Animation(pos=indicator_pos.pos, d=.25)
-            anim_1.start(indicator)
-
+            self.animate_indicator()
             if not self.base.list_o_players:
-                winners = sorted(self.base.list_o_winners, key=lambda x: x.total_score, reverse=True)
+                winners = sorted(self.base.list_o_winners, key=lambda player: player.total_score, reverse=True)
                 tie = [winners[0]] + [winner for winner in winners[1:] if winner.total_score == winners[0].total_score]
 
                 if len(tie) > 1:
@@ -239,11 +212,27 @@ class GameScreen(Screen):
                 for screen in self.parent.screens:
                     if screen.name == 'results':
                         screen.message = message
-                self.parent.current = 'results'
+                self.results_screen()
 
-    def change_score_display(self, score_area):
-        size, pos = score_area.size, score_area.pos
-        self.base.score_area.remove_widget(score_area)
+    def results_screen(self):
+        self.parent.current = 'results'
+
+    def animate_indicator(self):
+        indicator_pos = self.base.current_player.info.children[2]
+        indicator = self.base.info.children[0]
+        anim = Animation(pos=indicator_pos.pos, d=.25)
+        anim &= Animation(scale=.25, d=.2)
+        anim.start(indicator)
+
+    def animate_score_out(self):
+        curr_display = self.base.current_player.score_display
+        anim = Animation(pos=(self.base.score_area.x + 4, 550), d=.25)
+        anim.bind(on_complete=lambda animation, display: self.animate_score_in(display))
+        anim.start(curr_display)
+
+    def animate_score_in(self, curr_display):
+        pos = curr_display.pos
+        self.base.score_area.remove_widget(curr_display)
 
         new_display = self.base.current_player.score_display
         self.base.add_widget(new_display)
@@ -251,10 +240,10 @@ class GameScreen(Screen):
         new_display.size_hint_x = .692
         new_display.pos = (pos[0], 555)
         anim = Animation(pos=(self.base.score_area.x + 4, self.base.score_area.y + 4), d=.25)
-        anim.bind(on_complete=lambda x, y: self.finish_score_display_change(y))
+        anim.bind(on_complete=lambda animation, display: self.animate_score_finish(display))
         anim.start(new_display)
 
-    def finish_score_display_change(self, new_display):
+    def animate_score_finish(self, new_display):
         self.base.remove_widget(new_display)
         self.base.score_area.add_widget(new_display)
         self.base.buttons.end_turn.disabled = False
@@ -267,7 +256,8 @@ class ResultsScreen(Screen):
         super(ResultsScreen, self).__init__(**kwargs)
 
     def on_enter(self, *args):
-        self.add_widget(Label(text=self.message,
+        self.add_widget(Label(id='message',
+                              text=self.message,
                               color=rgba(colors['text']),
                               halign='center',
                               font_size=40,
@@ -276,6 +266,35 @@ class ResultsScreen(Screen):
                               pos_hint={'x': .25, 'y': .35}))
 
     def play_again(self):
+        for screen in self.parent.screens:
+            if screen.name == 'number':
+                screen.num_players = 0
+            if screen.name == 'name':
+                screen.player_names.clear()
+                screen.active_game = ObjectProperty()
+                screen.clear_widgets(screen.children[:-1])
+                screen.num_players = 0
+            if screen.name == 'game':
+                screen.base.info.box.clear_widgets()
+                if screen.base.info.children[0].id == 'indi':
+                    screen.base.info.remove_widget(screen.base.info.children[0])
+                screen.base.score_area.clear_widgets()
+                screen.base.list_o_players.clear()
+                screen.base.list_o_winners.clear()
+                screen.base.current_player = ObjectProperty()
+                screen.base.active_game = ObjectProperty()
+            if screen.name == 'goal':
+                screen.turn_limit = 0
+                screen.point_goal = 0
+            if screen.name == 'solo':
+                screen.base.info.box.clear_widgets()
+                screen.base.score_area.clear_widgets()
+                screen.turn = 0
+                screen.point_goal = 0
+                screen.turn_limit = 0
+            if screen.name == 'results':
+                message = [child for child in screen.children if child.id == 'message'][0]
+                screen.remove_widget(message)
         self.parent.current = 'menu'
 
     def exit(self):
@@ -422,7 +441,6 @@ class Indicator(Scatter):
 
 class InformationStation(FloatLayout):
     box = ObjectProperty()
-    active_game = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(InformationStation, self).__init__(**kwargs)
@@ -432,13 +450,13 @@ class InformationStation(FloatLayout):
         for i, player in enumerate(base.list_o_players):
             lil_box = BoxLayout(id=player.name)
             turn_indicator = Widget(id='turn',
-                                    size_hint=(.15, .1),
+                                    size_hint=(.18, .1),
                                     pos_hint={'x': 0, 'y': .375})
             lil_box.add_widget(turn_indicator)
 
             lil_box.add_widget(Label(id='name',
                                      text=player.name.title(),
-                                     size_hint=(.4, 1),
+                                     size_hint=(.22, 1),
                                      font_size=22,
                                      text_size=(lil_box.width, None),
                                      shorten=True,
@@ -450,18 +468,20 @@ class InformationStation(FloatLayout):
             lil_box.add_widget(total)
 
             self.box.add_widget(lil_box)
+            player.info = lil_box
 
-        indicator = Indicator()
+        indicator = Indicator(id='indi')
         indicator.add_widget(Image(source=die_images[1]))
         self.add_widget(indicator)
 
 
 class GameButtonRow(BoxLayout):
+    roll = ObjectProperty()
+    end_turn = ObjectProperty()
+    keep = ObjectProperty()
+
     def __init__(self, **kwargs):
         super(GameButtonRow, self).__init__(**kwargs)
-        roll = ObjectProperty()
-        end_turn = ObjectProperty()
-        keep = ObjectProperty()
 
 
 class RulesButton(Button):
@@ -600,42 +620,40 @@ class Base(FloatLayout):
             self.current_player.round_score = 0
 
     def update_display(self, score_type):
-        info_area = [child for child in self.info.box.children if child.id is self.current_player.name][0]
-        total_area = [child for child in info_area.children if child.id is 'total'][0]
-        player_area = self.current_player.score_display
 
         if score_type == 'round' or score_type == 'basket':
-            self.update_round_display(player_area, score_type)
+            self.update_round_display(score_type)
         if score_type == 'total':
-            self.update_total_display(player_area.total, total_area)
+            self.update_total_display()
         if score_type == 'progress':
-            self.update_progress_display(player_area.progress)
+            self.update_progress_display()
         if score_type == 'solo total':
-            self.update_solo_total_display(total_area)
+            self.update_solo_total_display()
 
-    def update_round_display(self, player_area, score_type):
-
+    def update_round_display(self, score_type):
         if score_type == 'basket':
-            player_area.round.text = 'Round: {}'.format(str(self.current_player.round_score +
-                                                            self.die_basket.basket_score))
-            player_area.total_plus.text = 'Total + Round: {}'.format(str(self.current_player.total_score +
-                                                                         self.current_player.round_score +
-                                                                         self.die_basket.basket_score))
+            self.current_player.score_display.round.text = 'Round: {}'.format(str(self.current_player.round_score +
+                                                                                  self.die_basket.basket_score))
+            self.current_player.score_display.total_plus.text = 'Total + Round: {}'.format(
+                str(self.current_player.total_score +
+                    self.current_player.round_score +
+                    self.die_basket.basket_score))
         if score_type == 'round':
-            player_area.round.text = f'Round: {str(self.current_player.round_score)}'
+            self.current_player.score_display.round.text = f'Round: {str(self.current_player.round_score)}'
 
-    def update_total_display(self, player_area, total_area):
-        total_area.text = str(self.current_player.total_score)
-        player_area.text = f'Total: {str(self.current_player.total_score)}'
+    def update_total_display(self):
+        self.current_player.info.children[0].text = str(self.current_player.total_score)
+        self.current_player.score_display.text = f'Total: {str(self.current_player.total_score)}'
 
-    def update_progress_display(self, player_area):
-        player_area.bold = True
-        player_area.text = f'{self.parent.turn} / {self.parent.turn_limit}'
+    def update_progress_display(self):
+        self.current_player.score_display.progress.text = f'{self.parent.turn} / {self.parent.turn_limit}'
 
-    def update_solo_total_display(self, total_area):
-        # total_area.size = total_area.texture_size
-        # total_area.size_hint = (.5, 1)
-        total_area.text = f'{self.current_player.total_score} / {self.parent.point_goal}'
+    def update_solo_total_display(self):
+        self.current_player.score_display.total_plus.text = 'Total + Round: {}'.format(
+                str(self.current_player.total_score +
+                    self.current_player.round_score +
+                    self.die_basket.basket_score))
+        self.current_player.info.children[0].text = f'{self.current_player.total_score} / {self.parent.point_goal}'
 
 
 class DieHolder(Widget):
@@ -724,6 +742,7 @@ class SoloGoalScreen(Screen):
         super(SoloGoalScreen, self).__init__(**kwargs)
 
     def on_enter(self):
+        self.cont.disabled = True
         point_button = Button(pos_hint={'x': .1, 'y': .8},
                               size_hint=(.3, .1),
                               text='Set Points Goal',
@@ -746,9 +765,10 @@ class SoloGoalScreen(Screen):
                          height=44,
                          background_normal='',
                          background_color=rgba(colors['second light']))
-            btn.bind(on_release=lambda btn: point_drop.select(int(btn.text)))
+            btn.bind(on_release=lambda button: point_drop.select(int(button.text)))
             point_drop.add_widget(btn)
         point_button.bind(on_release=point_drop.open)
+
         turn_drop = TurnGoal()
         for x in [5, 10, 20, 30, 40]:
             btn = Button(text=str(x),
@@ -756,23 +776,22 @@ class SoloGoalScreen(Screen):
                          height=44,
                          background_normal='',
                          background_color=rgba(colors['second light']))
-            btn.bind(on_release=lambda btn: turn_drop.select(int(btn.text)))
+            btn.bind(on_release=lambda button: turn_drop.select(int(button.text)))
             turn_drop.add_widget(btn)
         turn_button.bind(on_release=turn_drop.open)
 
     def on_point_goal(self, thing, stuff):
         self.goals.points.text = f'Points goal: {self.point_goal}'
-        if self.turn_limit:
+        if self.turn_limit and self.point_goal:
             self.set_difficulty()
 
     def on_turn_limit(self, thing, stuff):
         self.goals.turns.text = f'Turn limit: {self.turn_limit}'
-        if self.point_goal:
+        if self.point_goal and self.turn_limit:
             self.set_difficulty()
 
     def set_difficulty(self):
         points_per_turn = self.point_goal // self.turn_limit
-        print(points_per_turn)
         if 0 < points_per_turn <= 125:
             diff = 'Difficulty: Really Easy'
         elif 125 < points_per_turn <= 175:
@@ -796,6 +815,37 @@ class SoloGameScreen(Screen):
 
     def __init__(self, **kwargs):
         super(SoloGameScreen, self).__init__(**kwargs)
+
+    def on_enter(self, *args):
+        self.base.get_active_game()
+        self.base.get_active_game_players()
+
+        for screen in self.parent.screens:
+            if screen.name == 'goal':
+                self.point_goal = screen.point_goal
+                self.turn_limit = screen.turn_limit
+
+        player = self.base.list_o_players[0]
+        self.base.current_player = player
+        player_score = SoloPLayerScore(id=player.name)
+
+        name_area = player_score.name
+        round_area = player_score.round
+        total_plus_area = player_score.total_plus
+        prog_area = player_score.progress
+
+        name_area.text = player.name.title()
+        name_area.font_size = 32
+        name_area.bold = True
+
+        round_area.text = f'Round: {str(0)}'
+        total_plus_area.text = 'Total + Round: 0'
+        prog_area.text = f'Turns: {self.turn} / {self.turn_limit}'
+
+        player.score_display = player_score
+
+        self.base.score_area.add_widget(player.score_display)
+        self.set_current_player()
 
     def set_current_player(self):
         self.base.update_round_score(red=True)
@@ -821,40 +871,11 @@ class SoloGameScreen(Screen):
             for screen in self.parent.screens:
                 if screen.name == 'results':
                     screen.message = message
-            self.parent.current = 'results'
+            self.result_screen()
         self.turn += 1
 
-    def on_enter(self, *args):
-        self.base.get_active_game()
-        self.base.get_active_game_players()
-        for screen in self.parent.screens:
-            if screen.name == 'goal':
-                self.point_goal = screen.point_goal
-                self.turn_limit = screen.turn_limit
-
-        player = self.base.list_o_players[0]
-        self.base.current_player = player
-        player_score = SoloPLayerScore(id=player.name)
-
-        name_area = player_score.name
-        round_area = player_score.round
-        total_plus_area = player_score.total_plus
-        prog_area = player_score.progress
-
-        name_area.text = player.name.title()
-        name_area.font_size = 32
-        name_area.bold = True
-
-        round_area.text = f'Round: {str(0)}'
-
-        total_plus_area.text = 'Total + Round: 0'
-
-        prog_area.text = f'Turns: {self.turn} / {self.turn_limit}'
-
-        player.score_display = player_score
-
-        self.base.score_area.add_widget(player.score_display)
-        self.set_current_player()
+    def result_screen(self):
+        self.parent.current = 'results'
 
 
 class Screens(ScreenManager):
