@@ -189,7 +189,7 @@ class GameScreen(Screen):
         self.base.score_area.add_widget(self.base.list_o_players[0].score_display)
         self.set_current_player()
 
-    def set_current_player(self):
+    def set_current_player(self, *args):
         if not self.base.current_player or self.base.current_player.name == '':
             temp = self.base.list_o_players.popleft()
             self.base.current_player = temp
@@ -213,7 +213,7 @@ class GameScreen(Screen):
         self.base.update_display('basket')
         self.base.buttons.end_turn.disabled = True
 
-        if not any([player.total_score >= 500 for player in self.base.list_o_players]):
+        if not any([player.total_score >= 2000 for player in self.base.list_o_players]):
             self.animate_score_out()
 
             temp = self.base.list_o_players.popleft()
@@ -381,6 +381,9 @@ class DieScatter(Scatter):
 
         if self not in keepers:
             keepers.append(self)
+            if len(keepers) + len(proto_keepers) == 6 and die_basket.valid_basket == rgba(colors['valid']):
+                popup = SixKeepersPopup()
+                popup.open()
             die_holder = die_holders[(len(keepers) + len(proto_keepers)) - 1]
 
             anim = Animation(pos=(die_holder.pos[0] + 20, die_holder.pos[1]), d=0.5, t='out_quart')
@@ -409,6 +412,15 @@ class DieScatter(Scatter):
             anim.start(keeper)
 
 
+class SixKeepersPopup(Popup):
+    def __init__(self, **kwargs):
+        super(SixKeepersPopup, self).__init__(**kwargs)
+        self.title = 'Congratulations!'
+        label = Label(text='You got six keepers! Roll \'em again!')
+        self.content = label
+        self.size_hint = (.4, .2)
+
+
 class Dice(Widget):
 
     def __init__(self, **kwargs):
@@ -435,6 +447,7 @@ class Dice(Widget):
                      {'x': uniform(.65, .85), 'y': uniform(.15, .27)}]
 
         roll = [randint(1, 6) for _ in range(num_dice)]
+        new_dice = []
 
         for x, pos in zip(roll, positions[:num_dice + 1]):
             scatter = DieScatter(id=str(x), scale_max=.8, scale=.7)
@@ -443,9 +456,16 @@ class Dice(Widget):
             scatter.add_widget(image)
             self.add_widget(scatter)
 
+            new_dice.append(scatter)
+
             anim = Animation(pos=(self.parent.width * pos['x'] * .7, self.parent.height * pos['y']), d=0.5)
             anim &= Animation(rotation=randint(-360, 360), d=0.75)
             anim.start(scatter)
+
+        if not self.parent.active_game.choose_dice(new_dice):
+            popup = FarklePopup()
+            popup.bind(on_dismiss=self.parent.parent.set_current_player)
+            popup.open()
 
     def remove_dice(self, dice, turn=False):
         anim = Animation(pos=(-50, -50), d=0.5, t='in_out_quad')
@@ -482,7 +502,7 @@ class InformationStation(FloatLayout):
             lil_box = BoxLayout(id=player.name)
             turn_indicator = Widget(id='turn',
                                     size_hint=(.18, .1),
-                                    pos_hint={'x': 0, 'y': .375})
+                                    pos_hint={'x': 0, 'y': .4})
             lil_box.add_widget(turn_indicator)
 
             lil_box.add_widget(Label(id='name',
@@ -545,12 +565,91 @@ class KeepAll(Button):
                 die.add_to_keepers()
 
 
+class YouSurePopup(Popup):
+    def __init__(self, **kwargs):
+        super(YouSurePopup, self).__init__(**kwargs)
+
+    def on_parent(self, *args):
+        self.title = 'Are You Sure?!'
+        self.title_align = 'center'
+
+        label = Label(text='You still have points on the board!',
+                      halign='center',
+                      pos_hint={'x': 0, 'y': .2})
+
+        btn = Button(text='Meh, I don\'t want those.',
+                     size_hint=(.5, .2),
+                     pos_hint={'x': .25, 'y': .1})
+        btn.bind(on_release=self.leave_points)
+
+        base = FloatLayout()
+        base.add_widget(label)
+        base.add_widget(btn)
+
+        self.content = base
+        self.size_hint = (.4, .3)
+
+    def leave_points(self, *args):
+        game_screen = [screen for screen in self.parent.children[1].screens if screen.name == 'game'][0]
+
+        if len(game_screen.base.list_o_players) > 1:
+            game_screen.set_current_player()
+        else:
+            [screen for screen in self.parent.children[1].screens if screen.name == 'solo'][0].set_current_player()
+
+        self.dismiss()
+
+
+class ThresholdNotMet(Popup):
+    def __init__(self, **kwargs):
+        super(ThresholdNotMet, self).__init__(**kwargs)
+
+        self.title = 'Hold Up!'
+        self.title_align = 'center'
+
+        label = Label(text='You haven\'t earned 500 points in one turn yet.\n\n Keep rolling!',
+                      halign='center')
+
+        self.content = label
+        self.size_hint = (.4, .3)
+
+
+class FarklePopup(Popup):
+    def __init__(self, **kwargs):
+        super(FarklePopup, self).__init__(**kwargs)
+
+        self.title = 'Oh No!'
+        self.title_align = 'center'
+
+        label = Label(text='You did\'nt get any keepers! Your turn is over.\n\n:(',
+                      halign='center')
+
+        self.content = label
+        self.size_hint = (.4, .3)
+
+
 class EndTurn(Button):
     def __init__(self, **kwargs):
         super(EndTurn, self).__init__(**kwargs)
 
     def on_press(self):
-        self.parent.parent.parent.set_current_player()
+        base = self.parent.parent
+        if (base.die_basket.valid_basket == rgba(colors['valid'])
+                and base.current_player.total_score == 0
+                and (base.current_player.round_score + base.die_basket.basket_score) < 500):
+            popup = ThresholdNotMet()
+            popup.open()
+
+        elif (base.die_basket.valid_basket == rgba(colors['valid']) and
+                ([die for die in base.active_game.choose_dice([die for die in base.dice.children
+                                                               if die not in base.buttons.roll.proto_keepers])
+                    if die not in base.die_basket.keepers])):
+            popup = YouSurePopup()
+            popup.open()
+
+        else:
+            base.parent.set_current_player()
+
         return True
 
 
@@ -878,7 +977,7 @@ class SoloGameScreen(Screen):
         self.base.score_area.add_widget(player.score_display)
         self.set_current_player()
 
-    def set_current_player(self):
+    def set_current_player(self, *args):
         self.base.update_round_score(red=True)
         self.base.update_total_score()
         self.base.die_basket.valid_basket = rgba(colors['valid'])

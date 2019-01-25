@@ -83,6 +83,26 @@ class Game:
                     errors.append(die)
         return errors
 
+    def choose_dice(self, roll):
+        """Choose dice according to scoring rules. Boop Beep.
+
+        :param roll: List. Dice to choose from.
+        :return: List. Dice chosen.
+        """
+        nums = [int(die.id) for die in roll]
+        counts = Counter(nums)
+        if Game.is_three_pair(nums) and \
+                sum(scoring_rules[die - 1][count - 1]
+                    for die, count in counts.items()) < 1500:
+            choice = roll
+        elif Game.is_straight(nums):
+            choice = roll
+        else:
+            temp = [die for die, count in counts.items() for _ in range(count)
+                    if scoring_rules[die - 1][count - 1] > 0]
+            choice = [die for die in roll if int(die.id) in temp]
+        return choice
+
 
 class Player(object):
 
