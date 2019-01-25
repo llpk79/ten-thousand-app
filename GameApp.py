@@ -299,34 +299,60 @@ class ResultsScreen(Screen):
     def play_again(self):
         for screen in self.parent.screens:
             if screen.name == 'number':
-                screen.num_players = 0
+                self.reset_num_screen(screen)
+
             if screen.name == 'name':
-                screen.player_names.clear()
-                screen.active_game = ObjectProperty()
-                screen.clear_widgets(screen.children[:-1])
-                screen.num_players = 0
+                self.reset_name_screen(screen)
+
             if screen.name == 'game':
-                screen.base.info.box.clear_widgets()
-                if screen.base.info.children[0].id == 'indi':
-                    screen.base.info.remove_widget(screen.base.info.children[0])
-                screen.base.score_area.clear_widgets()
-                screen.base.list_o_players.clear()
-                screen.base.list_o_winners.clear()
-                screen.base.current_player = ObjectProperty()
-                screen.base.active_game = ObjectProperty()
+                self.reset_game_screen(screen)
+
             if screen.name == 'goal':
-                screen.turn_limit = 0
-                screen.point_goal = 0
+                self.reset_goal_screen(screen)
+
             if screen.name == 'solo':
-                screen.base.info.box.clear_widgets()
-                screen.base.score_area.clear_widgets()
-                screen.turn = 0
-                screen.point_goal = 0
-                screen.turn_limit = 0
+                self.reset_solo_screen(screen)
+
             if screen.name == 'results':
-                message = [child for child in screen.children if child.id == 'message'][0]
-                screen.remove_widget(message)
+                self.reset_results_screen(screen)
+
         self.parent.current = 'menu'
+
+    def reset_num_screen(self, screen):
+        screen.num_players = 0
+
+    def reset_name_screen(self, screen):
+        screen.player_names.clear()
+        screen.active_game = ObjectProperty()
+        screen.clear_widgets(screen.children[:-1])
+        screen.num_players = 0
+
+    def reset_game_screen(self, screen):
+        screen.base.info.box.clear_widgets()
+
+        if screen.base.info.children[0].id == 'indi':
+            screen.base.info.remove_widget(screen.base.info.children[0])
+
+        screen.base.score_area.clear_widgets()
+        screen.base.list_o_players.clear()
+        screen.base.list_o_winners.clear()
+        screen.base.current_player = ObjectProperty()
+        screen.base.active_game = ObjectProperty()
+
+    def reset_goal_scree(self, screen):
+        screen.turn_limit = 0
+        screen.point_goal = 0
+
+    def reset_solo_screen(self, screen):
+        screen.base.info.box.clear_widgets()
+        screen.base.score_area.clear_widgets()
+        screen.turn = 0
+        screen.point_goal = 0
+        screen.turn_limit = 0
+
+    def reset_results_screen(self, screen):
+        message = [child for child in screen.children if child.id == 'message'][0]
+        screen.remove_widget(message)
 
     def exit(self):
         self.parent.parent.close()
@@ -412,15 +438,6 @@ class DieScatter(Scatter):
             anim.start(keeper)
 
 
-class SixKeepersPopup(Popup):
-    def __init__(self, **kwargs):
-        super(SixKeepersPopup, self).__init__(**kwargs)
-        self.title = 'Congratulations!'
-        label = Label(text='You got six keepers! Roll \'em again!')
-        self.content = label
-        self.size_hint = (.4, .2)
-
-
 class Dice(Widget):
 
     def __init__(self, **kwargs):
@@ -435,8 +452,8 @@ class Dice(Widget):
         else:
             self.remove_dice(self.children)
 
-        # sound = sounds[random.randint(1, 6)]
-        # sound.play()
+        sound = sounds[1]
+        sound.play()
 
         # Randomized dice positions.
         positions = [{'x': uniform(.05, .25), 'y': uniform(.4, .52)},  # Top row.
@@ -544,15 +561,6 @@ class RulesButton(Button):
         popup.open()
 
 
-class RulesPopup(Popup):
-    def __init__(self, **kwargs):
-        super(RulesPopup, self).__init__(**kwargs)
-        self.title = 'How To Play'
-        label = Label(text=msg)
-        self.content = label
-        self.size_hint = (.9, .9)
-
-
 class KeepAll(Button):
     def __init__(self, **kwargs):
         super(KeepAll, self).__init__(**kwargs)
@@ -563,6 +571,19 @@ class KeepAll(Button):
             if (die not in self.parent.parent.buttons.roll.proto_keepers and
                     die not in self.parent.parent.die_basket.keepers):
                 die.add_to_keepers()
+
+
+class RulesPopup(Popup):
+    def __init__(self, **kwargs):
+        super(RulesPopup, self).__init__(**kwargs)
+
+        self.title = 'How To Play'
+        self.title_align = 'center'
+
+        label = Label(text=msg)
+
+        self.content = label
+        self.size_hint = (.9, .9)
 
 
 class YouSurePopup(Popup):
@@ -600,6 +621,20 @@ class YouSurePopup(Popup):
         self.dismiss()
 
 
+class SixKeepersPopup(Popup):
+    def __init__(self, **kwargs):
+        super(SixKeepersPopup, self).__init__(**kwargs)
+
+        self.title = 'Congratulations!'
+        self.title_align = 'center'
+
+        label = Label(text='You got six keepers! Roll \'em all again!',
+                      halign='center')
+
+        self.content = label
+        self.size_hint = (.4, .3)
+
+
 class ThresholdNotMet(Popup):
     def __init__(self, **kwargs):
         super(ThresholdNotMet, self).__init__(**kwargs)
@@ -628,6 +663,28 @@ class FarklePopup(Popup):
         self.size_hint = (.4, .3)
 
 
+class NonKeeperKept(Popup):
+    def __init__(self, **kwargs):
+        super(NonKeeperKept, self).__init__(**kwargs)
+
+        self.title = 'WARNING!!'
+        self.title_align = 'center'
+
+        label = Label(text='You have non-scoring dice in the scoring area.'
+                           '\n\nRemove non-scoring dice to turn line green and continue',
+                      halign='center',
+                      pos_hint={'x': 0, 'y': .3})
+        btn = RulesButton(text='See rules',
+                          size_hint=(.5, .3),
+                          pos_hint={'x': .25, 'y': .1})
+        layout = FloatLayout()
+        layout.add_widget(label)
+        layout.add_widget(btn)
+
+        self.content = layout
+        self.size_hint = (.5, .4)
+
+
 class EndTurn(Button):
     def __init__(self, **kwargs):
         super(EndTurn, self).__init__(**kwargs)
@@ -645,6 +702,12 @@ class EndTurn(Button):
                                                                if die not in base.buttons.roll.proto_keepers])
                     if die not in base.die_basket.keepers])):
             popup = YouSurePopup()
+            popup.open()
+
+        elif (base.die_basket.valid_basket == rgba(colors['error']) and
+              base.die_basket.keepers and
+              base.active_game.validate_choice([int(die.id) for die in base.die_basket.keepers])):
+            popup = NonKeeperKept()
             popup.open()
 
         else:
@@ -750,7 +813,6 @@ class Base(FloatLayout):
             self.current_player.round_score = 0
 
     def update_display(self, score_type):
-
         if score_type == 'round' or score_type == 'basket':
             self.update_round_display(score_type)
         if score_type == 'total':
