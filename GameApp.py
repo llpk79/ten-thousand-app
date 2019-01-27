@@ -30,20 +30,6 @@ from colors import colors
 from random import randint, uniform
 
 
-class PlayerNumButton(Button):
-    def __init__(self, **kwargs):
-        super(PlayerNumButton, self).__init__(**kwargs)
-
-    def on_press(self):
-        buttons = self.parent.parent.buttons
-        player_num_screen = buttons.parent.parent
-        if buttons.two == self:
-            player_num_screen.set_num_players(2)
-        elif buttons.three == self:
-            player_num_screen.set_num_players(3)
-        return True
-
-
 class PlayerNumDropDown(DropDown):
     def __init__(self, **kwargs):
         super(PlayerNumDropDown, self).__init__(**kwargs)
@@ -64,6 +50,12 @@ class PlayerNumberScreen(Screen):
             self.num_players = num_players
             self.set_label()
 
+            names = [screen for screen in self.parent.screens if screen.name == 'name'][0]
+            if self.num_players > 1:
+                names.game_mode = 'game'
+            else:
+                names.game_mode = 'solo'
+
     def on_enter(self):
         player_num_button = Button(text='Set Number\nof Players',
                                    size_hint=(.3, .1),
@@ -71,6 +63,7 @@ class PlayerNumberScreen(Screen):
                                    background_normal='',
                                    background_color=rgba(colors['second dark']))
         self.add_widget(player_num_button)
+
         num_drop = PlayerNumDropDown()
         for i, num in zip(list(range(2, 7)), ['two', 'three', 'four', 'five', 'six']):
             btn = Button(text=num,
@@ -81,6 +74,7 @@ class PlayerNumberScreen(Screen):
                          background_color=rgba(colors['second light']))
             btn.bind(on_release=lambda button: num_drop.select(int(button.id)))
             num_drop.add_widget(btn)
+
         player_num_button.bind(on_release=num_drop.open)
 
     def set_label(self):
@@ -103,6 +97,7 @@ class PlayerNameScreen(Screen):
     player_names = ListProperty()
     active_game = ObjectProperty()
     num_players = NumericProperty()
+    game_mode = StringProperty()
 
     def __init__(self, **kwargs):
         super(PlayerNameScreen, self).__init__(**kwargs)
@@ -118,9 +113,9 @@ class PlayerNameScreen(Screen):
 
             if len(self.player_names) == self.num_players:
                 self.active_game = Game(self.player_names)
-                if self.num_players > 1:
+                if self.game_mode == 'game':
                     self.parent.current = 'game'
-                else:
+                elif self.game_mode == 'solo':
                     self.parent.current = 'solo'
 
     def on_enter(self):
@@ -187,9 +182,9 @@ class GameScreen(Screen):
             player.score_display = player_score
 
         self.base.score_area.add_widget(self.base.list_o_players[0].score_display)
-        self.set_current_player()
+        self.next_round()
 
-    def set_current_player(self, *args):
+    def next_round(self, *args):
         if not self.base.current_player or self.base.current_player.name == '':
             temp = self.base.list_o_players.popleft()
             self.base.current_player = temp
@@ -198,7 +193,87 @@ class GameScreen(Screen):
             self.animate_indicator()
             return
 
-        self.base.update_round_score(red=True)
+        self.reset_round()
+        self.animate_score_out()
+
+    def get_next_player(self):
+        if not any([player.total_score >= 2000 for player in self.base.list_o_players]):
+            temp = self.base.list_o_players.popleft()
+            self.base.current_player = temp
+            self.base.list_o_players.append(temp)
+
+        else:
+            self.base.list_o_winners.append(self.base.current_player)
+            self.base.current_player = self.base.list_o_players.popleft()
+
+        if not self.base.list_o_players:
+            self.find_winner()
+
+        else:
+            if self.base.current_player.name == 'digital overlord':
+                Clock.schedule_once(self.base.buttons.roll.on_press, 1.)
+
+    def find_winner(self):
+        winners = sorted(self.base.list_o_winners, key=lambda player: player.total_score, reverse=True)
+        tie = [winners[0]] + [winner for winner in winners[1:] if winner.total_score == winners[0].total_score]
+
+        if len(tie) > 1:
+            names = [win.name.title() for win in tie]
+            ties = ' and '.join(names)
+            message = f'It\'s a Tie!\n{ties}\n' \
+                f'Win with {winners[0].total_score} points!'
+        else:
+            message = f'{winners[0].name.title()} Wins!\n\nWith {winners[0].total_score} points!'
+
+        for screen in self.parent.screens:
+            if screen.name == 'results':
+                screen.message = message
+
+        self.results_screen()
+
+    def continue_overlord_turn(self):
+        scoring_dice = [die for die in self.base.active_game.choose_dice(
+            [die for die in self.base.dice.children if die not in self.base.buttons.roll.proto_keepers])]
+
+        if not scoring_dice:
+            Clock.schedule_once(self.base.buttons.end_turn.on_press, .5)
+            return
+
+        else:
+            Clock.schedule_once(self.overlord_status_check, float(len(scoring_dice)))
+            for i, die in enumerate(scoring_dice):
+                Clock.schedule_once(die.add_to_keepers, float(i * .85 + .75))
+
+    def overlord_status_check(self, *args):
+        winners = sorted(self.base.list_o_winners, key=lambda player: player.total_score, reverse=True)
+
+        if len(self.base.buttons.roll.proto_keepers) + len(self.base.die_basket.keepers) >= 6:
+            Clock.schedule_once(self.base.buttons.roll.on_press, 1.)
+            return
+
+        elif winners and winners[0].total_score >= (self.base.current_player.total_score +
+                                                    self.base.current_player.round_score +
+                                                    self.base.die_basket.basket_score):
+            Clock.schedule_once(self.base.buttons.roll.on_press, 1.)
+            return
+
+        elif not winners and (self.base.current_player.total_score +
+                              self.base.current_player.round_score +
+                              self.base.die_basket.basket_score) >= 2000:
+            Clock.schedule_once(self.base.buttons.end_turn.on_press, 1.)
+            return
+
+        elif (self.base.current_player.round_score + self.base.die_basket.basket_score >= 500 and
+                len(self.base.buttons.roll.proto_keepers) + len(self.base.die_basket.keepers) >= 3):
+            Clock.schedule_once(self.base.buttons.end_turn.on_press, .1)
+            return
+
+        else:
+            Clock.schedule_once(self.base.buttons.roll.on_press, 1.)
+            return
+
+    def reset_round(self):
+        self.base.update_round_score(green_line=True)
         self.base.update_total_score()
         self.base.die_basket.valid_basket = rgba(colors['valid'])
         self.base.buttons.roll.update_color()
@@ -206,44 +281,12 @@ class GameScreen(Screen):
         self.base.current_player.round_score = 0
         self.base.die_basket.keepers.clear()
         self.base.buttons.roll.proto_keepers.clear()
-        self.base.dice.remove_dice(self.base.dice.children, turn=True)
+        self.base.dice.remove_dice(self.base.dice.children)
         self.base.update_display('name')
         self.base.update_display('total')
         self.base.update_display('round')
         self.base.update_display('basket')
         self.base.buttons.end_turn.disabled = True
-
-        if not any([player.total_score >= 2000 for player in self.base.list_o_players]):
-            self.animate_score_out()
-
-            temp = self.base.list_o_players.popleft()
-            self.base.current_player = temp
-            self.base.list_o_players.append(temp)
-
-            self.animate_indicator()
-        else:
-            self.animate_score_out()
-
-            self.base.list_o_winners.append(self.base.current_player)
-            self.base.current_player = self.base.list_o_players.popleft()
-
-            self.animate_indicator()
-            if not self.base.list_o_players:
-                winners = sorted(self.base.list_o_winners, key=lambda player: player.total_score, reverse=True)
-                tie = [winners[0]] + [winner for winner in winners[1:] if winner.total_score == winners[0].total_score]
-
-                if len(tie) > 1:
-                    names = [win.name.title() for win in tie]
-                    ties = ' and '.join(names)
-                    message = f'It\'s a Tie!\n{ties}\n' \
-                        f'Win with {winners[0].total_score} points!'
-                else:
-                    message = f'{winners[0].name.title()} Wins!\n\nWith {winners[0].total_score} points!'
-
-                for screen in self.parent.screens:
-                    if screen.name == 'results':
-                        screen.message = message
-                self.results_screen()
 
     def results_screen(self):
         self.parent.current = 'results'
@@ -261,15 +304,23 @@ class GameScreen(Screen):
         anim.bind(on_complete=lambda animation, display: self.animate_score_in(display))
         anim.start(curr_display)
 
+    def add_new_display(self, pos):
+        new_display = self.base.current_player.score_display
+        new_display.size_hint_x = .692
+        new_display.pos = (pos[0], 555)
+        self.base.add_widget(new_display)
+        return new_display
+
     def animate_score_in(self, curr_display):
         pos = curr_display.pos
         self.base.score_area.remove_widget(curr_display)
 
-        new_display = self.base.current_player.score_display
-        self.base.add_widget(new_display)
+        self.get_next_player()
 
-        new_display.size_hint_x = .692
-        new_display.pos = (pos[0], 555)
+        new_display = self.add_new_display(pos)
+
+        self.animate_indicator()
+
         anim = Animation(pos=(self.base.score_area.x + 4, self.base.score_area.y + 4), d=.25)
         anim.bind(on_complete=lambda animation, display: self.animate_score_finish(display))
         anim.start(new_display)
@@ -339,7 +390,7 @@ class ResultsScreen(Screen):
         screen.base.current_player = ObjectProperty()
         screen.base.active_game = ObjectProperty()
 
-    def reset_goal_scree(self, screen):
+    def reset_goal_screen(self, screen):
         screen.turn_limit = 0
         screen.point_goal = 0
 
@@ -399,7 +450,7 @@ class DieScatter(Scatter):
 
             touch.ungrab(self)
 
-    def add_to_keepers(self):
+    def add_to_keepers(self, *args):
         die_basket = self.parent.parent.die_basket
         keepers = die_basket.keepers
         proto_keepers = self.parent.parent.buttons.roll.proto_keepers
@@ -407,7 +458,9 @@ class DieScatter(Scatter):
 
         if self not in keepers:
             keepers.append(self)
-            if len(keepers) + len(proto_keepers) == 6 and die_basket.valid_basket == rgba(colors['valid']):
+            if (len(keepers) + len(proto_keepers) == 6 and
+                    die_basket.valid_basket == rgba(colors['valid']) and
+                    self.parent.parent.current_player.name != 'digital overlord'):
                 popup = SixKeepersPopup()
                 popup.open()
             die_holder = die_holders[(len(keepers) + len(proto_keepers)) - 1]
@@ -439,21 +492,23 @@ class DieScatter(Scatter):
 
 
 class Dice(Widget):
+    num_dice = NumericProperty()
 
     def __init__(self, **kwargs):
         super(Dice, self).__init__(**kwargs)
 
         self.id = 'dice'
 
-    def update_dice(self, num_dice, turn=False):
-        if not turn:
-            self.remove_dice([widget for widget in self.children
-                              if widget not in self.parent.buttons.roll.proto_keepers])
-        else:
-            self.remove_dice(self.children)
+    def update_dice(self, num_dice):
+        doomed_dice = [widget for widget in self.children if widget not in self.parent.buttons.roll.proto_keepers]
+        self.remove_dice(doomed_dice)
+        self.num_dice = num_dice
+        Clock.schedule_once(self.update_dice_two, .8)
 
-        sound = sounds[1]
+    def update_dice_two(self, *args):
+        sound = sounds[2]
         sound.play()
+        num_dice = self.num_dice
 
         # Randomized dice positions.
         positions = [{'x': uniform(.05, .25), 'y': uniform(.4, .52)},  # Top row.
@@ -481,10 +536,17 @@ class Dice(Widget):
 
         if not self.parent.active_game.choose_dice(new_dice):
             popup = FarklePopup()
-            popup.bind(on_dismiss=self.parent.parent.set_current_player)
+            popup.bind(on_dismiss=self.parent.parent.next_round)
             popup.open()
+            if self.parent.current_player.name == 'digital overlord':
+                Clock.schedule_once(popup.dismiss, 1.)
+                return
+            return
 
-    def remove_dice(self, dice, turn=False):
+        if self.parent.current_player.name == 'digital overlord':
+            self.parent.parent.continue_overlord_turn()
+
+    def remove_dice(self, dice):
         anim = Animation(pos=(-50, -50), d=0.5, t='in_out_quad')
         anim.bind(on_complete=lambda x, y: self.complete(y))
         if dice:
@@ -493,7 +555,7 @@ class Dice(Widget):
 
     def complete(self, die):
         if die.parent:
-            die.parent.remove_widget(die)
+            self.remove_widget(die)
 
 
 class Indicator(Scatter):
@@ -614,9 +676,9 @@ class YouSurePopup(Popup):
         game_screen = [screen for screen in self.parent.children[1].screens if screen.name == 'game'][0]
 
         if len(game_screen.base.list_o_players) > 1:
-            game_screen.set_current_player()
+            game_screen.next_round()
         else:
-            [screen for screen in self.parent.children[1].screens if screen.name == 'solo'][0].set_current_player()
+            [screen for screen in self.parent.children[1].screens if screen.name == 'solo'][0].next_round()
 
         self.dismiss()
 
@@ -689,7 +751,7 @@ class EndTurn(Button):
     def __init__(self, **kwargs):
         super(EndTurn, self).__init__(**kwargs)
 
-    def on_press(self):
+    def on_press(self, *args):
         base = self.parent.parent
         if (base.die_basket.valid_basket == rgba(colors['valid'])
                 and base.current_player.total_score == 0
@@ -711,7 +773,7 @@ class EndTurn(Button):
             popup.open()
 
         else:
-            base.parent.set_current_player()
+            base.parent.next_round()
 
         return True
 
@@ -722,7 +784,7 @@ class Roll(Button):
     def __init__(self, **kwargs):
         super(Roll, self).__init__(**kwargs)
 
-    def on_press(self):
+    def on_press(self, *args):
         die_basket = self.parent.parent.die_basket
 
         if die_basket.valid_basket == rgba(colors['valid']):
@@ -787,14 +849,14 @@ class Base(FloatLayout):
         self.info.add_player_totals()
         return self.list_o_players
 
-    def update_round_score(self, red=None):
+    def update_round_score(self, green_line=None):
         die_basket = self.die_basket
         if die_basket.valid_basket == rgba(colors['valid']):
             self.current_player.round_score += die_basket.basket_score
             self.update_display('round')
             die_basket.basket_score = 0
 
-            if not red:
+            if not green_line:
                 die_basket.valid_basket = rgba(colors['error'])
                 self.buttons.roll.background_color = rgba(colors['prime off'])
 
@@ -898,6 +960,10 @@ class SoloGameButton(Button):
         for screen in self.parent.parent.parent.screens:
             if screen.name == 'number':
                 screen.num_players = 1
+                screen.game_mode = 'solo'
+        Clock.schedule_once(self.to_goal_screen, .5)
+
+    def to_goal_screen(self, *args):
         self.parent.parent.parent.current = 'goal'
 
 
@@ -1040,7 +1106,7 @@ class SoloGameScreen(Screen):
         self.set_current_player()
 
     def set_current_player(self, *args):
-        self.base.update_round_score(red=True)
+        self.base.update_round_score(green_line=True)
         self.base.update_total_score()
         self.base.die_basket.valid_basket = rgba(colors['valid'])
         self.base.buttons.roll.update_color()
