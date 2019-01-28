@@ -41,6 +41,10 @@ ScreenManager:
 
 <SoloGameButton>:
 
+<FriendsButton>:
+
+<MyOwnSelfButton>:
+
 <Background@Image>:
     source: 'images/tabletop4.jpg'
     allow_stretch: True
@@ -48,37 +52,65 @@ ScreenManager:
 
 <MenuScreen>:
     name: 'menu'
-    FloatLayout:
-        Background:
-        Label:
-            text: 'Welcome to Ten Thousand!'
-            font_size: 35
-            color: rgba(colors['text'])
-            size_hint: .4, .1
-            pos_hint: {'x': .295, 'y': .65}
-        Label:
-            text: 'A dice game'
-            font_size: 20
-            color: rgba(colors['text'])
-            size_hint: .2, .1
-            pos_hint: {'x': .4, 'y': .575}
-        Button:
-            text: 'Play With Friends!'
-            color: rgba(colors['text'])
-            font_size: 35
-            size_hint: .47, .1
-            pos_hint: {'x': 0.25, 'y': 0.45}
-            on_press: root.parent.current = 'number'
-            background_normal: ''
-            background_color: rgba(colors['prime dark'])
-        SoloGameButton:
-            text: 'Solo Challenge!'
-            color: rgba(colors['text'])
-            font_size: 35
-            size_hint: .47, .1
-            pos_hint: {'x': 0.25, 'y': 0.3}
-            background_normal: ''
-            background_color: rgba(colors['prime dark'])
+    Background:
+    Label:
+        text: 'Welcome to Ten Thousand!'
+        font_size: 35
+        color: rgba(colors['text'])
+        size_hint: .4, .1
+        pos_hint: {'x': .295, 'y': .85}
+    Label:
+        text: 'A dice game'
+        halign: 'center'
+        color: rgba(colors['text'])
+        font_size: 20
+        size_hint: .2, .1
+        pos_hint: {'x': .4, 'y': .775}
+    FriendsButton:
+        text: 'Play With Friends!'
+        color: rgba(colors['text'])
+        font_size: 35
+        size_hint: .3, .1
+        pos_hint: {'x': .35, 'y': 0.65}
+        background_normal: ''
+        background_color: rgba(colors['prime dark'])
+    Label:
+        text: 'Pass your device around to play.\nCast to a larger screen for the best experience!'
+        halign: 'center'
+        color: rgba(colors['text'])
+        font_size: 25
+        size_hint: .5, .1
+        pos_hint: {'x': .25, 'y': .525}
+    MyOwnSelfButton:
+        text: 'Play By Myself!'
+        color: rgba(colors['text'])
+        font_size: 35
+        size_hint: .3, .1
+        pos_hint: {'x': .35, 'y': .4}
+        background_normal: ''
+        background_color: rgba(colors['prime dark'])
+    Label:
+        text: 'Play against a computer controlled player.'
+        halign: 'center'
+        color: rgba(colors['text'])
+        font_size: 25
+        size_hint: .5, .1
+        pos_hint: {'x': .25, 'y': .3}
+    SoloGameButton:
+        text: 'Challenge Mode!'
+        color: rgba(colors['text'])
+        font_size: 35
+        size_hint: .3, .1
+        pos_hint: {'x': .35, 'y': 0.2}
+        background_normal: ''
+        background_color: rgba(colors['prime dark'])
+    Label:
+        text: 'Can you get enough points in a set number of turns to win?'
+        halign: 'center'
+        color: rgba(colors['text'])
+        font_size: 25
+        size_hint: .5, .1
+        pos_hint: {'x': .25, 'y': .1}
 
 
 <ResultsScreen>:

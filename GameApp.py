@@ -50,12 +50,6 @@ class PlayerNumberScreen(Screen):
             self.num_players = num_players
             self.set_label()
 
-            names = [screen for screen in self.parent.screens if screen.name == 'name'][0]
-            if self.num_players > 1:
-                names.game_mode = 'game'
-            else:
-                names.game_mode = 'solo'
-
     def on_enter(self):
         player_num_button = Button(text='Set Number\nof Players',
                                    size_hint=(.3, .1),
@@ -113,18 +107,35 @@ class PlayerNameScreen(Screen):
 
             if len(self.player_names) == self.num_players:
                 self.active_game = Game(self.player_names)
-                if self.game_mode == 'game':
+
+                game = [screen for screen in self.parent.screens if screen.name == 'game'][0]
+                if self.game_mode == 'comp':
+                    game.comp_player = self.player_names[-1]
+                else:
+                    game.comp_player = ''
+
+                if self.game_mode == 'game' or self.game_mode == 'comp':
                     self.parent.current = 'game'
                 elif self.game_mode == 'solo':
                     self.parent.current = 'solo'
 
     def on_enter(self):
         self.get_num_players()
+        if self.game_mode == 'comp':
+            self.num_players += 1
+
         for i in range(1, self.num_players + 1):
-            label = Label(text=f'Enter Player {i}\'s name:',
+            if self.game_mode == 'comp' and i == self.num_players:
+                text = 'Enter Computer Player Name:'
+                pos = {'x': .1, 'y': .4 + (self.num_players / 10) - (i * .15)}
+            else:
+                text = f'Enter Player {i}\'s name:'
+                pos = {'x': .15, 'y': .4 + (self.num_players / 10) - (i * .15)}
+
+            label = Label(text=text,
                           font_size=30,
                           color=rgba(colors['text']),
-                          pos_hint={'x': .15, 'y': .4 + (self.num_players / 10) - (i * .15)},
+                          pos_hint=pos,
                           size_hint=(.25, .1),
                           id=str(i))
             self.add_widget(label)
@@ -142,6 +153,51 @@ class MenuScreen(Screen):
         super(MenuScreen, self).__init__(**kwargs)
 
 
+class FriendsButton(Button):
+    def __init__(self, **kwargs):
+        super(FriendsButton, self).__init__(**kwargs)
+
+    def on_release(self):
+        name_screen = [screen for screen in self.parent.parent.screens if screen.name == 'name'][0]
+        name_screen.game_mode = 'game'
+        Clock.schedule_once(self.to_num_screen, .2)
+
+    def to_num_screen(self, *args):
+        self.parent.parent.current = 'number'
+
+
+class MyOwnSelfButton(Button):
+    def __init__(self, **kwargs):
+        super(MyOwnSelfButton, self).__init__(**kwargs)
+
+    def on_release(self):
+        num_screen = [screen for screen in self.parent.parent.screens if screen.name == 'number'][0]
+        num_screen.num_players = 1
+        names = [screen for screen in self.parent.parent.screens if screen.name == 'name'][0]
+        names.game_mode = 'comp'
+        Clock.schedule_once(self.to_name_screen, .2)
+
+    def to_name_screen(self, *args):
+        self.parent.parent.current = 'name'
+
+
+class SoloGameButton(Button):
+    def __init__(self, **kwargs):
+        super(SoloGameButton, self).__init__(**kwargs)
+
+    def on_press(self):
+        for screen in self.parent.parent.screens:
+            if screen.name == 'number':
+                screen.num_players = 1
+                screen.game_mode = 'solo'
+            if screen.name == 'name':
+                screen.game_mode = 'solo'
+        Clock.schedule_once(self.to_goal_screen, .2)
+
+    def to_goal_screen(self, *args):
+        self.parent.parent.current = 'goal'
+
+
 class PlayerScore(BoxLayout):
     def __init__(self, **kwargs):
         super(PlayerScore, self).__init__(**kwargs)
@@ -154,6 +210,7 @@ class ScoreArea(BoxLayout):
 
 class GameScreen(Screen):
     base = ObjectProperty()
+    comp_player = StringProperty()
 
     def __init__(self, **kwargs):
         super(GameScreen, self).__init__(**kwargs)
@@ -210,7 +267,7 @@ class GameScreen(Screen):
             self.find_winner()
 
         else:
-            if self.base.current_player.name == 'digital overlord':
+            if self.base.current_player.name == self.base.parent.comp_player:
                 Clock.schedule_once(self.base.buttons.roll.on_press, 1.)
 
     def find_winner(self):
@@ -460,7 +517,7 @@ class DieScatter(Scatter):
             keepers.append(self)
             if (len(keepers) + len(proto_keepers) == 6 and
                     die_basket.valid_basket == rgba(colors['valid']) and
-                    self.parent.parent.current_player.name != 'digital overlord'):
+                    self.parent.parent.current_player.name != self.parent.parent.parent.comp_player):
                 popup = SixKeepersPopup()
                 popup.open()
             die_holder = die_holders[(len(keepers) + len(proto_keepers)) - 1]
@@ -538,12 +595,12 @@ class Dice(Widget):
             popup = FarklePopup()
             popup.bind(on_dismiss=self.parent.parent.next_round)
             popup.open()
-            if self.parent.current_player.name == 'digital overlord':
+            if self.parent.current_player.name == self.parent.parent.comp_player:
                 Clock.schedule_once(popup.dismiss, 1.)
                 return
             return
 
-        if self.parent.current_player.name == 'digital overlord':
+        if self.parent.current_player.name == self.parent.parent.comp_player:
             self.parent.parent.continue_overlord_turn()
 
     def remove_dice(self, dice):
@@ -952,21 +1009,6 @@ class DieBasket(FloatLayout):
             roll.update_color()
 
 
-class SoloGameButton(Button):
-    def __init__(self, **kwargs):
-        super(SoloGameButton, self).__init__(**kwargs)
-
-    def on_press(self):
-        for screen in self.parent.parent.parent.screens:
-            if screen.name == 'number':
-                screen.num_players = 1
-                screen.game_mode = 'solo'
-        Clock.schedule_once(self.to_goal_screen, .5)
-
-    def to_goal_screen(self, *args):
-        self.parent.parent.parent.current = 'goal'
-
-
 class SoloPLayerScore(BoxLayout):
     def __init__(self, **kwargs):
         super(SoloPLayerScore, self).__init__(**kwargs)
@@ -1067,6 +1109,7 @@ class SoloGoalScreen(Screen):
 
 class SoloGameScreen(Screen):
     base = ObjectProperty()
+    comp_player = StringProperty()
     turn = NumericProperty(0)
     point_goal = NumericProperty()
     turn_limit = NumericProperty()
@@ -1103,9 +1146,9 @@ class SoloGameScreen(Screen):
         player.score_display = player_score
 
         self.base.score_area.add_widget(player.score_display)
-        self.set_current_player()
+        self.next_round()
 
-    def set_current_player(self, *args):
+    def next_round(self, *args):
         self.base.update_round_score(green_line=True)
         self.base.update_total_score()
         self.base.die_basket.valid_basket = rgba(colors['valid'])
@@ -1114,7 +1157,7 @@ class SoloGameScreen(Screen):
         self.base.current_player.round_score = 0
         self.base.die_basket.keepers.clear()
         self.base.buttons.roll.proto_keepers.clear()
-        self.base.dice.remove_dice(self.base.dice.children, turn=True)
+        self.base.dice.remove_dice(self.base.dice.children)
         self.base.update_display('round')
         self.base.update_display('progress')
         self.base.update_display('solo total')
