@@ -63,6 +63,9 @@ class PlayerNumberScreen(Screen):
             self.set_label()
 
     def on_enter(self):
+        if not self.num_players:
+            self.cont.disabled = True
+
         player_num_button = Button(text='Set Number of Players',
                                    font_size=25,
                                    size_hint=(.3, .1),
@@ -84,11 +87,40 @@ class PlayerNumberScreen(Screen):
 
         player_num_button.bind(on_release=num_drop.open)
 
+        add_comp_player = Button(text='Computer Friend: No',
+                                 id='compy',
+                                 font_size=25,
+                                 size_hint=(.3, .1),
+                                 pos_hint={'x': .35, 'y': .45},
+                                 background_normal='',
+                                 background_color=rgba(colors['second dark']),
+                                 on_release=self.set_comp_player)
+        self.add_widget(add_comp_player)
+
+    def set_btn_text(self, game_mode):
+        btn = [child for child in self.children if child.id == 'compy'][0]
+        if game_mode == 'comp':
+            btn.text = 'Computer Friend: Yes'
+        elif game_mode == 'game':
+            btn.text = 'Computer Friend: No'
+
+    def set_comp_player(self, *args):
+        names = [screen for screen in self.parent.screens if screen.name == 'name'][0]
+        if names.game_mode == 'comp':
+            names.game_mode = mode = 'game'
+        elif names.game_mode == 'game':
+            names.game_mode = mode = 'comp'
+        self.set_btn_text(mode)
+
     def set_label(self):
         self.num_label.text = f'Players Selected: {self.num_players}'
         self.cont.disabled = False
 
     def to_menu_screen(self):
+        names = [screen for screen in self.parent.screens if screen.name == 'name'][0]
+        names.game_mode = 'game'
+        self.num_label.text = 'Players Selected: '
+        self.cont.disabled = True
         self.parent.current = 'menu'
 
 
@@ -161,12 +193,18 @@ class PlayerNameScreen(Screen):
                 input_name.focus = True
             self.add_widget(input_name)
 
+    def reset_num_screen(self):
+        number = [screen for screen in self.parent.screens if screen.name == 'number'][0]
+        number.num_label.text = 'Players Selected: '
+        number.cont.disabled = True
+        number.num_players = 0
+
     def to_prev_screen(self):
         if self.game_mode == 'comp':
+            self.reset_num_screen()
             self.parent.current = 'menu'
         elif self.game_mode == 'game':
-            number = [screen for screen in self.parent.screens if screen.name == 'number'][0]
-            number.num_players = 0
+            self.reset_num_screen()
             self.parent.current = 'number'
         elif self.game_mode == 'solo':
             goal = [screen for screen in self.parent.screens if screen.name == 'goal'][0]
@@ -455,6 +493,8 @@ class ResultsScreen(Screen):
 
     def reset_num_screen(self, screen):
         screen.num_players = 0
+        screen.num_label.text = 'Selected Players: '
+        screen.cont.disabled = True
 
     def reset_name_screen(self, screen):
         screen.player_names.clear()
@@ -610,6 +650,8 @@ class Dice(Widget):
             image = Image(source=die_images[x])
 
             scatter.add_widget(image)
+            if self.parent.current_player.comp_player:
+                scatter.locked = True
             self.add_widget(scatter)
 
             new_dice.append(scatter)
@@ -703,8 +745,9 @@ class RulesButton(Button):
         super(RulesButton, self).__init__(**kwargs)
 
     def on_press(self):
-        popup = RulesPopup()
-        popup.open()
+        if not self.parent.parent.current_player.comp_player:
+            popup = RulesPopup()
+            popup.open()
 
 
 class KeepAll(Button):
@@ -712,6 +755,8 @@ class KeepAll(Button):
         super(KeepAll, self).__init__(**kwargs)
 
     def on_press(self):
+        if self.parent.parent.current_player.comp_player:
+            return
         dice = self.parent.parent.dice.children
         for die in dice:
             if (die not in self.parent.parent.buttons.roll.proto_keepers and
@@ -836,6 +881,8 @@ class EndTurn(Button):
         super(EndTurn, self).__init__(**kwargs)
 
     def on_press(self, *args):
+        if self.parent.parent.current_player.comp_player and not args:
+            return
         base = self.parent.parent
         if (base.die_basket.valid_basket == rgba(colors['valid'])
                 and base.current_player.total_score == 0
@@ -869,6 +916,8 @@ class Roll(Button):
         super(Roll, self).__init__(**kwargs)
 
     def on_press(self, *args):
+        if self.parent.parent.current_player.comp_player and not args:
+            return
         die_basket = self.parent.parent.die_basket
 
         if die_basket.valid_basket == rgba(colors['valid']):
@@ -891,7 +940,6 @@ class Roll(Button):
 
         die_basket.keepers.clear()
         self.update_color()
-        return True
 
     def update_color(self):
         die_basket = self.parent.parent.die_basket.valid_basket
