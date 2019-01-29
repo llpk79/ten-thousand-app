@@ -121,6 +121,7 @@ class Player(object):
         self.name = name
         self.score_display = None
         self.info = None
+        self.comp_player = False
 
 
 def main():

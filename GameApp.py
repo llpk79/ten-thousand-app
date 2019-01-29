@@ -39,6 +39,18 @@ class PlayerNumDropDown(DropDown):
         self.dismiss()
 
 
+class BackButton(Button):
+    def __init__(self, **kwargs):
+        super(BackButton, self).__init__(**kwargs)
+        self.text = 'Back'
+        self.pos_hint = {'x': .05, 'y': .05}
+        self.font_size = 22
+        self.size_hint = (.075, .05)
+        self.color = rgba(colors['text'])
+        self.background_normal = ''
+        self.background_color = rgba(colors['prime dark'])
+
+
 class PlayerNumberScreen(Screen):
     num_players = NumericProperty()
 
@@ -51,7 +63,8 @@ class PlayerNumberScreen(Screen):
             self.set_label()
 
     def on_enter(self):
-        player_num_button = Button(text='Set Number\nof Players',
+        player_num_button = Button(text='Set Number of Players',
+                                   font_size=25,
                                    size_hint=(.3, .1),
                                    pos_hint={'x': .35, 'y': .65},
                                    background_normal='',
@@ -74,6 +87,9 @@ class PlayerNumberScreen(Screen):
     def set_label(self):
         self.num_label.text = f'Players Selected: {self.num_players}'
         self.cont.disabled = False
+
+    def to_menu_screen(self):
+        self.parent.current = 'menu'
 
 
 class FocusInput(TextInput):
@@ -110,9 +126,7 @@ class PlayerNameScreen(Screen):
 
                 game = [screen for screen in self.parent.screens if screen.name == 'game'][0]
                 if self.game_mode == 'comp':
-                    game.comp_player = self.player_names[-1]
-                else:
-                    game.comp_player = ''
+                    self.active_game.player_list[-1].comp_player = True
 
                 if self.game_mode == 'game' or self.game_mode == 'comp':
                     self.parent.current = 'game'
@@ -146,6 +160,20 @@ class PlayerNameScreen(Screen):
             if i == 1:
                 input_name.focus = True
             self.add_widget(input_name)
+
+    def to_prev_screen(self):
+        if self.game_mode == 'comp':
+            self.parent.current = 'menu'
+        elif self.game_mode == 'game':
+            number = [screen for screen in self.parent.screens if screen.name == 'number'][0]
+            number.num_players = 0
+            self.parent.current = 'number'
+        elif self.game_mode == 'solo':
+            goal = [screen for screen in self.parent.screens if screen.name == 'goal'][0]
+            goal.turn_limit = 0
+            goal.point_goal = 0
+            self.parent.current = 'goal'
+        self.clear_widgets(self.children[:-2])
 
 
 class MenuScreen(Screen):
@@ -210,7 +238,6 @@ class ScoreArea(BoxLayout):
 
 class GameScreen(Screen):
     base = ObjectProperty()
-    comp_player = StringProperty()
 
     def __init__(self, **kwargs):
         super(GameScreen, self).__init__(**kwargs)
@@ -267,7 +294,7 @@ class GameScreen(Screen):
             self.find_winner()
 
         else:
-            if self.base.current_player.name == self.base.parent.comp_player:
+            if self.base.current_player.comp_player:
                 Clock.schedule_once(self.base.buttons.roll.on_press, 1.)
 
     def find_winner(self):
@@ -517,7 +544,7 @@ class DieScatter(Scatter):
             keepers.append(self)
             if (len(keepers) + len(proto_keepers) == 6 and
                     die_basket.valid_basket == rgba(colors['valid']) and
-                    self.parent.parent.current_player.name != self.parent.parent.parent.comp_player):
+                    not self.parent.parent.current_player.comp_player):
                 popup = SixKeepersPopup()
                 popup.open()
             die_holder = die_holders[(len(keepers) + len(proto_keepers)) - 1]
@@ -595,12 +622,12 @@ class Dice(Widget):
             popup = FarklePopup()
             popup.bind(on_dismiss=self.parent.parent.next_round)
             popup.open()
-            if self.parent.current_player.name == self.parent.parent.comp_player:
+            if self.parent.current_player.comp_player:
                 Clock.schedule_once(popup.dismiss, 1.)
                 return
             return
 
-        if self.parent.current_player.name == self.parent.parent.comp_player:
+        if self.parent.current_player.comp_player:
             self.parent.parent.continue_overlord_turn()
 
     def remove_dice(self, dice):
@@ -1106,6 +1133,8 @@ class SoloGoalScreen(Screen):
             diff = 'Difficulty: Possible'
         self.goals.diff.text = diff
 
+    def to_menu_screen(self):
+        self.parent.current = 'menu'
 
 class SoloGameScreen(Screen):
     base = ObjectProperty()
