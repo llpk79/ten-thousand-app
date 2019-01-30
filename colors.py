@@ -1,11 +1,11 @@
-colors = {'prime': '#600838e',
+colors = {'prime': '#00838f',
           'prime light': '#4fb3be',
           'prime off': '#e1f5fe',
-          'prime dark': '#005661',
+          'prime dark': '#005662',
           'second': '#1b5e20',
           'second light': '#4c8c4a',
           'second dark': '#003300',
           'second off': '#519657',
           'text': '#ffffff',
           'error': '#B00020',
-          'valid': '#33691e'}
+          'valid': '#003300'}

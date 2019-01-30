@@ -42,9 +42,9 @@ class PlayerNumDropDown(DropDown):
 class BackButton(Button):
     def __init__(self, **kwargs):
         super(BackButton, self).__init__(**kwargs)
-        self.text = 'Back'
+        self.text = 'BACK'
         self.pos_hint = {'x': .05, 'y': .05}
-        self.font_size = 22
+        self.font_size = 14
         self.size_hint = (.075, .05)
         self.color = rgba(colors['text'])
         self.background_normal = ''
@@ -66,43 +66,43 @@ class PlayerNumberScreen(Screen):
         if not self.num_players:
             self.cont.disabled = True
 
-        player_num_button = Button(text='Set Number of Players',
-                                   font_size=25,
-                                   size_hint=(.3, .1),
-                                   pos_hint={'x': .35, 'y': .65},
+        player_num_button = Button(text='SET NUMBER OF PLAYERS',
+                                   font_size=30,
+                                   size_hint=(.4, .1),
+                                   pos_hint={'x': .3, 'y': .65},
                                    background_normal='',
-                                   background_color=rgba(colors['second dark']))
+                                   background_color=rgba(colors['prime dark']))
         self.add_widget(player_num_button)
 
         num_drop = PlayerNumDropDown()
-        for i, num in zip(list(range(2, 7)), ['two', 'three', 'four', 'five', 'six']):
+        for i, num in zip(list(range(2, 7)), ['TWO', 'THREE', 'FOUR', 'FIVE']):
             btn = Button(text=num,
                          id=str(i),
                          size_hint_y=None,
                          height=44,
                          background_normal='',
-                         background_color=rgba(colors['second light']))
+                         background_color=rgba(colors['second']))
             btn.bind(on_release=lambda button: num_drop.select(int(button.id)))
             num_drop.add_widget(btn)
 
         player_num_button.bind(on_release=num_drop.open)
 
-        add_comp_player = Button(text='Computer Friend: No',
+        add_comp_player = Button(text='COMPUTER FRIEND: N0',
                                  id='compy',
-                                 font_size=25,
-                                 size_hint=(.3, .1),
-                                 pos_hint={'x': .35, 'y': .45},
+                                 font_size=30,
+                                 size_hint=(.4, .1),
+                                 pos_hint={'x': .3, 'y': .45},
                                  background_normal='',
-                                 background_color=rgba(colors['second dark']),
+                                 background_color=rgba(colors['prime dark']),
                                  on_release=self.set_comp_player)
         self.add_widget(add_comp_player)
 
     def set_btn_text(self, game_mode):
         btn = [child for child in self.children if child.id == 'compy'][0]
         if game_mode == 'comp':
-            btn.text = 'Computer Friend: Yes'
+            btn.text = 'COMPUTER FRIEND: YES'
         elif game_mode == 'game':
-            btn.text = 'Computer Friend: No'
+            btn.text = 'COMPUTER FRIEND: NO'
 
     def set_comp_player(self, *args):
         names = [screen for screen in self.parent.screens if screen.name == 'name'][0]
@@ -113,7 +113,8 @@ class PlayerNumberScreen(Screen):
         self.set_btn_text(mode)
 
     def set_label(self):
-        self.num_label.text = f'Players Selected: {self.num_players}'
+        texts = {1: 'ONE', 2: 'TWO', 3: 'THREE', 4: 'FOUR', 5: 'FIVE'}
+        self.num_label.text = f'Players Selected: {texts[self.num_players]}'
         self.cont.disabled = False
 
     def to_menu_screen(self):
@@ -293,7 +294,7 @@ class GameScreen(Screen):
             total_area = player_score.total
             total_plus_area = player_score.total_plus
 
-            name_area.font_size = 32
+            name_area.font_size = 30
             name_area.bold = True
             name_area.text = player.name.title()
 
@@ -379,6 +380,12 @@ class GameScreen(Screen):
             Clock.schedule_once(self.base.buttons.roll.on_press, 1.)
             return
 
+        elif winners and (self.base.current_player.total_score +
+                          self.base.current_player.round_score +
+                          self.base.die_basket.basket_score) > winners[0].total_score:
+            Clock.schedule_once(self.base.buttons.end_turn.on_press, 1.)
+            return
+
         elif not winners and (self.base.current_player.total_score +
                               self.base.current_player.round_score +
                               self.base.die_basket.basket_score) >= 2000:
@@ -399,7 +406,7 @@ class GameScreen(Screen):
         self.base.update_total_score()
         self.base.die_basket.valid_basket = rgba(colors['valid'])
         self.base.buttons.roll.update_color()
-        self.base.buttons.roll.text = 'Roll \'em!'
+        self.base.buttons.roll.text = 'ROLL \'EM!'
         self.base.current_player.round_score = 0
         self.base.die_basket.keepers.clear()
         self.base.buttons.roll.proto_keepers.clear()
@@ -408,7 +415,9 @@ class GameScreen(Screen):
         self.base.update_display('total')
         self.base.update_display('round')
         self.base.update_display('basket')
+        self.base.buttons.end_turn.text = 'END TURN'
         self.base.buttons.end_turn.disabled = True
+        self.base.buttons.end_turn.color = [1, 1, 1, .3]
 
     def results_screen(self):
         self.parent.current = 'results'
@@ -451,6 +460,7 @@ class GameScreen(Screen):
         self.base.remove_widget(new_display)
         self.base.score_area.add_widget(new_display)
         self.base.buttons.end_turn.disabled = False
+        self.base.buttons.end_turn.color = rgba(colors['text'])
 
 
 class ResultsScreen(Screen):
@@ -499,7 +509,7 @@ class ResultsScreen(Screen):
     def reset_name_screen(self, screen):
         screen.player_names.clear()
         screen.active_game = ObjectProperty()
-        screen.clear_widgets(screen.children[:-1])
+        screen.clear_widgets(screen.children[:-2])
         screen.num_players = 0
 
     def reset_game_screen(self, screen):
@@ -770,6 +780,7 @@ class RulesPopup(Popup):
 
         self.title = 'How To Play'
         self.title_align = 'center'
+        self.separator_color = rgba(colors['second'])
 
         label = Label(text=msg)
 
@@ -784,14 +795,17 @@ class YouSurePopup(Popup):
     def on_parent(self, *args):
         self.title = 'Are You Sure?!'
         self.title_align = 'center'
+        self.separator_color = rgba(colors['second'])
 
         label = Label(text='You still have points on the board!',
                       halign='center',
                       pos_hint={'x': 0, 'y': .2})
 
-        btn = Button(text='Meh, I don\'t want those.',
-                     size_hint=(.5, .2),
-                     pos_hint={'x': .25, 'y': .1})
+        btn = Button(text='MEH, I DON\'T WANT THOSE.',
+                     size_hint=(.6, .2),
+                     pos_hint={'x': .2, 'y': .1},
+                     background_normal='',
+                     background_color=rgba(colors['prime dark']))
         btn.bind(on_release=self.leave_points)
 
         base = FloatLayout()
@@ -803,11 +817,12 @@ class YouSurePopup(Popup):
 
     def leave_points(self, *args):
         game_screen = [screen for screen in self.parent.children[1].screens if screen.name == 'game'][0]
+        solo_screen = [screen for screen in self.parent.children[1].screens if screen.name == 'solo'][0]
 
         if len(game_screen.base.list_o_players) > 1:
             game_screen.next_round()
         else:
-            [screen for screen in self.parent.children[1].screens if screen.name == 'solo'][0].next_round()
+            solo_screen.next_round()
 
         self.dismiss()
 
@@ -818,6 +833,7 @@ class SixKeepersPopup(Popup):
 
         self.title = 'Congratulations!'
         self.title_align = 'center'
+        self.separator_color = rgba(colors['second'])
 
         label = Label(text='You got six keepers! Roll \'em all again!',
                       halign='center')
@@ -832,6 +848,7 @@ class ThresholdNotMet(Popup):
 
         self.title = 'Hold Up!'
         self.title_align = 'center'
+        self.separator_color = rgba(colors['second'])
 
         label = Label(text='You haven\'t earned 500 points in one turn yet.\n\n Keep rolling!',
                       halign='center')
@@ -846,6 +863,7 @@ class FarklePopup(Popup):
 
         self.title = 'Oh No!'
         self.title_align = 'center'
+        self.separator_color = rgba(colors['second'])
 
         label = Label(text='You did\'nt get any keepers! Your turn is over.\n\n:(',
                       halign='center')
@@ -860,13 +878,13 @@ class NonKeeperKept(Popup):
 
         self.title = 'WARNING!!'
         self.title_align = 'center'
+        self.separator_color = rgba(colors['second'])
 
         label = Label(text='You have non-scoring dice in the scoring area.'
                            '\n\nRemove non-scoring dice to turn line green and continue',
                       halign='center',
                       pos_hint={'x': 0, 'y': .3})
-        btn = RulesButton(text='See rules',
-                          size_hint=(.5, .3),
+        btn = RulesButton(size_hint=(.5, .3),
                           pos_hint={'x': .25, 'y': .1})
         layout = FloatLayout()
         layout.add_widget(label)
@@ -944,15 +962,49 @@ class Roll(Button):
     def update_color(self):
         die_basket = self.parent.parent.die_basket.valid_basket
         if die_basket == rgba(colors['error']):
-            self.background_color = rgba(colors['second off'])
+            self.background_color = rgba(colors['prime off'])
             self.disabled = True
             self.color = [1, 1, 1, .3]
+            self.parent.end_turn.text = 'END TURN'
 
         elif die_basket == rgba(colors['valid']):
-            self.background_color = rgba(colors['second dark'])
-            self.text = 'Risk \'n Roll!'
+            self.background_color = rgba(colors['prime dark'])
             self.disabled = False
             self.color = rgba(colors['text'])
+            current_player = self.parent.parent.current_player
+            if (current_player.total_score + current_player.round_score +
+                    self.parent.parent.die_basket.basket_score) >= 500:
+                self.parent.end_turn.text = 'KEEP POINTS'
+                self.text = 'RISK \'N ROLL!'
+
+
+class Quit(Button):
+    def __init__(self, **kwargs):
+        super(Quit, self).__init__(**kwargs)
+
+    def on_release(self):
+        screen_manager = self.parent.parent.parent.parent
+        for screen in screen_manager.screens:
+            if screen.name == 'results':
+                results = screen
+
+        for screen in screen_manager.screens:
+            if screen.name == 'number':
+                results.reset_num_screen(screen)
+
+            if screen.name == 'name':
+                results.reset_name_screen(screen)
+
+            if screen.name == 'game':
+                results.reset_game_screen(screen)
+
+            if screen.name == 'goal':
+                results.reset_goal_screen(screen)
+
+            if screen.name == 'solo':
+                results.reset_solo_screen(screen)
+
+        screen_manager.current = 'menu'
 
 
 class Base(FloatLayout):
@@ -1118,18 +1170,24 @@ class SoloGoalScreen(Screen):
 
     def on_enter(self):
         self.cont.disabled = True
-        point_button = Button(pos_hint={'x': .1, 'y': .8},
+        intro_label = Label(text='Set up your own game for a customized challenge!',
+                            halign='center',
+                            font_size=30,
+                            pos_hint={'x': .2, 'y': .825},
+                            size_hint=(.6, .1))
+        point_button = Button(text='SET POINTS GOAL',
+                              pos_hint={'x': .1, 'y': .7},
                               size_hint=(.3, .1),
-                              text='Set Points Goal',
                               font_size=30,
                               background_normal='',
                               background_color=rgba(colors['prime dark']))
-        turn_button = Button(pos_hint={'x': .6, 'y': .8},
+        turn_button = Button(pos_hint={'x': .6, 'y': .7},
                              size_hint=(.3, .1),
-                             text='Set Max Turns',
+                             text='SET TURN LIMIT',
                              font_size=30,
                              background_normal='',
                              background_color=rgba(colors['prime dark']))
+        self.add_widget(intro_label)
         self.add_widget(point_button)
         self.add_widget(turn_button)
 
@@ -1139,7 +1197,7 @@ class SoloGoalScreen(Screen):
                          size_hint_y=None,
                          height=44,
                          background_normal='',
-                         background_color=rgba(colors['second light']))
+                         background_color=rgba(colors['second']))
             btn.bind(on_release=lambda button: point_drop.select(int(button.text)))
             point_drop.add_widget(btn)
         point_button.bind(on_release=point_drop.open)
@@ -1150,7 +1208,7 @@ class SoloGoalScreen(Screen):
                          size_hint_y=None,
                          height=44,
                          background_normal='',
-                         background_color=rgba(colors['second light']))
+                         background_color=rgba(colors['second']))
             btn.bind(on_release=lambda button: turn_drop.select(int(button.text)))
             turn_drop.add_widget(btn)
         turn_button.bind(on_release=turn_drop.open)
@@ -1184,6 +1242,7 @@ class SoloGoalScreen(Screen):
     def to_menu_screen(self):
         self.parent.current = 'menu'
 
+
 class SoloGameScreen(Screen):
     base = ObjectProperty()
     comp_player = StringProperty()
@@ -1213,7 +1272,7 @@ class SoloGameScreen(Screen):
         prog_area = player_score.progress
 
         name_area.text = player.name.title()
-        name_area.font_size = 32
+        name_area.font_size = 30
         name_area.bold = True
 
         round_area.text = f'Round: {str(0)}'
@@ -1230,7 +1289,8 @@ class SoloGameScreen(Screen):
         self.base.update_total_score()
         self.base.die_basket.valid_basket = rgba(colors['valid'])
         self.base.buttons.roll.update_color()
-        self.base.buttons.roll.text = 'Roll \'em!'
+        self.base.buttons.roll.text = 'ROLL \'EM!'
+        self.base.buttons.end_turn.text = 'END TURN'
         self.base.current_player.round_score = 0
         self.base.die_basket.keepers.clear()
         self.base.buttons.roll.proto_keepers.clear()
