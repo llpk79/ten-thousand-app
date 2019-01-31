@@ -25,7 +25,7 @@ from kivy.utils import rgba
 from collections import deque
 from media import sounds, die_images
 from logic import Game
-from game_rules import msg
+from game_rules import msg1, msg2
 from colors import colors
 from random import randint, uniform
 
@@ -42,13 +42,6 @@ class PlayerNumDropDown(DropDown):
 class BackButton(Button):
     def __init__(self, **kwargs):
         super(BackButton, self).__init__(**kwargs)
-        self.text = 'BACK'
-        self.pos_hint = {'x': .05, 'y': .05}
-        self.font_size = 14
-        self.size_hint = (.075, .05)
-        self.color = rgba(colors['text'])
-        self.background_normal = ''
-        self.background_color = rgba(colors['prime dark'])
 
 
 class PlayerNumberScreen(Screen):
@@ -201,10 +194,10 @@ class PlayerNameScreen(Screen):
         number.num_players = 0
 
     def to_prev_screen(self):
-        if self.game_mode == 'comp':
+        if self.game_mode == 'comp' and self.num_players == 2:
             self.reset_num_screen()
             self.parent.current = 'menu'
-        elif self.game_mode == 'game':
+        elif self.game_mode == 'game' or (self.game_mode == 'comp' and self.num_players > 2):
             self.reset_num_screen()
             self.parent.current = 'number'
         elif self.game_mode == 'solo':
@@ -298,9 +291,9 @@ class GameScreen(Screen):
             name_area.bold = True
             name_area.text = player.name.title()
 
-            round_area.text = f'Round: {str(0)}'
-            total_area.text = f'Total: {str(0)}'
-            total_plus_area.text = f'Total + Round: {str(0)}'
+            round_area.text = 'Round: 0'
+            total_area.text = 'Total: 0'
+            total_plus_area.text = 'Total + Round: 0'
 
             player.score_display = player_score
 
@@ -344,9 +337,9 @@ class GameScreen(Screen):
             names = [win.name.title() for win in tie]
             ties = ' and '.join(names)
             message = f'It\'s a Tie!\n{ties}\n' \
-                f'Win with {winners[0].total_score} points!'
+                f'Win with {winners[0].total_score:,} points!'
         else:
-            message = f'{winners[0].name.title()} Wins!\n\nWith {winners[0].total_score} points!'
+            message = f'{winners[0].name.title()} Wins!\n\nWith {winners[0].total_score:,} points!'
 
         for screen in self.parent.screens:
             if screen.name == 'results':
@@ -774,28 +767,41 @@ class KeepAll(Button):
                 die.add_to_keepers()
 
 
-class RulesPopup(Popup):
+class MyPopup(Popup):
+    def __init__(self, **kwargs):
+        super(MyPopup, self).__init__(**kwargs)
+
+        self.title_align = 'center'
+        self.separator_color = rgba(colors['second'])
+        self.size_hint = (.4, .3)
+
+
+class RulesPopup(MyPopup):
     def __init__(self, **kwargs):
         super(RulesPopup, self).__init__(**kwargs)
 
         self.title = 'How To Play'
-        self.title_align = 'center'
-        self.separator_color = rgba(colors['second'])
 
-        label = Label(text=msg)
+        label = Label(text=msg1,
+                      halign='center',
+                      pos_hint={'x': 0, 'y': .475})
+        label2 = Label(text=msg2,
+                       halign='left',
+                       pos_hint={'x': 0, 'y': 0})
+        container = FloatLayout()
+        container.add_widget(label2)
+        container.add_widget(label)
 
-        self.content = label
+        self.content = container
         self.size_hint = (.9, .9)
 
 
-class YouSurePopup(Popup):
+class YouSurePopup(MyPopup):
     def __init__(self, **kwargs):
         super(YouSurePopup, self).__init__(**kwargs)
 
     def on_parent(self, *args):
         self.title = 'Are You Sure?!'
-        self.title_align = 'center'
-        self.separator_color = rgba(colors['second'])
 
         label = Label(text='You still have points on the board!',
                       halign='center',
@@ -813,7 +819,6 @@ class YouSurePopup(Popup):
         base.add_widget(btn)
 
         self.content = base
-        self.size_hint = (.4, .3)
 
     def leave_points(self, *args):
         game_screen = [screen for screen in self.parent.children[1].screens if screen.name == 'game'][0]
@@ -827,19 +832,59 @@ class YouSurePopup(Popup):
         self.dismiss()
 
 
-class SixKeepersPopup(Popup):
+class Exit(Button):
+    def __init__(self, **kwargs):
+        super(Exit, self).__init__(**kwargs)
+
+    def on_release(self):
+        popup = ReallyExit()
+        popup.open()
+
+
+class ReallyExit(MyPopup):
+    def __init__(self, **kwargs):
+        super(ReallyExit, self).__init__(**kwargs)
+
+        self.title = 'So soon?'
+
+        label = Label(text='Are you sure you want to exit the app?',
+                      halign='center',
+                      pos_hint={'x': 0, 'y': .3})
+        yes_go = Button(text='Exit',
+                        size_hint=(.4, .1),
+                        pos_hint={'x': .55, 'y': .1},
+                        background_normal='',
+                        background_color=rgba(colors['prime dark']))
+        yes_go.bind(on_release=self.quit)
+        no_stay = Button(text='Stay',
+                         size_hint=(.4, .1),
+                         pos_hint={'x': .05, 'y': .1},
+                         background_normal='',
+                         background_color=rgba(colors['prime dark']))
+        no_stay.bind(on_release=self.stay)
+        base = FloatLayout()
+        base.add_widget(label)
+        base.add_widget(yes_go)
+        base.add_widget(no_stay)
+        self.content = base
+
+    def stay(self, *args):
+        self.dismiss()
+
+    def quit(self, *args):
+        self.parent.close()
+
+
+class SixKeepersPopup(MyPopup):
     def __init__(self, **kwargs):
         super(SixKeepersPopup, self).__init__(**kwargs)
 
         self.title = 'Congratulations!'
-        self.title_align = 'center'
-        self.separator_color = rgba(colors['second'])
 
         label = Label(text='You got six keepers! Roll \'em all again!',
                       halign='center')
 
         self.content = label
-        self.size_hint = (.4, .3)
 
 
 class ThresholdNotMet(Popup):
@@ -847,14 +892,11 @@ class ThresholdNotMet(Popup):
         super(ThresholdNotMet, self).__init__(**kwargs)
 
         self.title = 'Hold Up!'
-        self.title_align = 'center'
-        self.separator_color = rgba(colors['second'])
 
         label = Label(text='You haven\'t earned 500 points in one turn yet.\n\n Keep rolling!',
                       halign='center')
 
         self.content = label
-        self.size_hint = (.4, .3)
 
 
 class FarklePopup(Popup):
@@ -862,23 +904,18 @@ class FarklePopup(Popup):
         super(FarklePopup, self).__init__(**kwargs)
 
         self.title = 'Oh No!'
-        self.title_align = 'center'
-        self.separator_color = rgba(colors['second'])
 
         label = Label(text='You did\'nt get any keepers! Your turn is over.\n\n:(',
                       halign='center')
 
         self.content = label
-        self.size_hint = (.4, .3)
 
 
-class NonKeeperKept(Popup):
+class NonKeeperKept(MyPopup):
     def __init__(self, **kwargs):
         super(NonKeeperKept, self).__init__(**kwargs)
 
         self.title = 'WARNING!!'
-        self.title_align = 'center'
-        self.separator_color = rgba(colors['second'])
 
         label = Label(text='You have non-scoring dice in the scoring area.'
                            '\n\nRemove non-scoring dice to turn line green and continue',
@@ -978,12 +1015,40 @@ class Roll(Button):
                 self.text = 'RISK \'N ROLL!'
 
 
-class Quit(Button):
+class ReallyQuit(MyPopup):
     def __init__(self, **kwargs):
-        super(Quit, self).__init__(**kwargs)
+        super(ReallyQuit, self).__init__(**kwargs)
 
-    def on_release(self):
-        screen_manager = self.parent.parent.parent.parent
+        self.title = 'You\'ve got a good thing going here.'
+
+        label = Label(text='Are you sure you want quit your game?',
+                      halign='center',
+                      pos_hint={'x': 0, 'y': .3})
+        yes_go = Button(text='Quit',
+                        size_hint=(.4, .1),
+                        pos_hint={'x': .55, 'y': .1},
+                        background_normal='',
+                        background_color=rgba(colors['prime dark']))
+        yes_go.bind(on_release=self.quit)
+        no_stay = Button(text='Stay',
+                         size_hint=(.4, .1),
+                         pos_hint={'x': .05, 'y': .1},
+                         background_normal='',
+                         background_color=rgba(colors['prime dark']))
+        no_stay.bind(on_release=self.stay)
+        base = FloatLayout()
+        base.add_widget(label)
+        base.add_widget(yes_go)
+        base.add_widget(no_stay)
+        self.content = base
+
+    def stay(self, *args):
+        self.dismiss()
+
+    def quit(self, *args):
+        self.dismiss()
+        results = [screen for screen in self.parent.children[1].screens if screen.name == 'results'][0]
+        screen_manager = self.parent.children[1]
         for screen in screen_manager.screens:
             if screen.name == 'results':
                 results = screen
@@ -1005,6 +1070,15 @@ class Quit(Button):
                 results.reset_solo_screen(screen)
 
         screen_manager.current = 'menu'
+
+
+class Quit(Button):
+    def __init__(self, **kwargs):
+        super(Quit, self).__init__(**kwargs)
+
+    def on_release(self):
+        popup = ReallyQuit()
+        popup.open()
 
 
 class Base(FloatLayout):
@@ -1070,28 +1144,28 @@ class Base(FloatLayout):
 
     def update_round_display(self, score_type):
         if score_type == 'basket':
-            self.current_player.score_display.round.text = 'Round: {}'.format(str(self.current_player.round_score +
-                                                                                  self.die_basket.basket_score))
-            self.current_player.score_display.total_plus.text = 'Total + Round: {}'.format(
-                str(self.current_player.total_score +
-                    self.current_player.round_score +
-                    self.die_basket.basket_score))
+            self.current_player.score_display.round.text = 'Round: {:,}'.format(self.current_player.round_score +
+                                                                                self.die_basket.basket_score)
+            self.current_player.score_display.total_plus.text = 'Total + Round: {:,}'.format(
+                self.current_player.total_score +
+                self.current_player.round_score +
+                self.die_basket.basket_score)
         if score_type == 'round':
-            self.current_player.score_display.round.text = f'Round: {str(self.current_player.round_score)}'
+            self.current_player.score_display.round.text = f'Round: {self.current_player.round_score:,}'
 
     def update_total_display(self):
-        self.current_player.info.children[0].text = str(self.current_player.total_score)
-        self.current_player.score_display.text = f'Total: {str(self.current_player.total_score)}'
+        self.current_player.info.children[0].text = f'{self.current_player.total_score:,}'
+        self.current_player.score_display.total.text = f'Total: {self.current_player.total_score:,}'
 
     def update_progress_display(self):
         self.current_player.score_display.progress.text = f'{self.parent.turn} / {self.parent.turn_limit}'
 
     def update_solo_total_display(self):
-        self.current_player.score_display.total_plus.text = 'Total + Round: {}'.format(
-                str(self.current_player.total_score +
-                    self.current_player.round_score +
-                    self.die_basket.basket_score))
-        self.current_player.info.children[0].text = f'{self.current_player.total_score} / {self.parent.point_goal}'
+        self.current_player.score_display.total_plus.text = 'Total + Round: {:,}'.format(
+                self.current_player.total_score +
+                self.current_player.round_score +
+                self.die_basket.basket_score)
+        self.current_player.info.children[0].text = f'{self.current_player.total_score:,} / {self.parent.point_goal:,}'
 
 
 class DieHolder(Widget):
@@ -1193,17 +1267,18 @@ class SoloGoalScreen(Screen):
 
         point_drop = PointGoal()
         for x in [2500, 5000, 7500, 10000, 15000]:
-            btn = Button(text=str(x),
+            btn = Button(text=f'{x:,}',
+                         id=str(x),
                          size_hint_y=None,
                          height=44,
                          background_normal='',
                          background_color=rgba(colors['second']))
-            btn.bind(on_release=lambda button: point_drop.select(int(button.text)))
+            btn.bind(on_release=lambda button: point_drop.select(int(button.id)))
             point_drop.add_widget(btn)
         point_button.bind(on_release=point_drop.open)
 
         turn_drop = TurnGoal()
-        for x in [5, 10, 20, 30, 40]:
+        for x in [5, 10, 15, 20, 30]:
             btn = Button(text=str(x),
                          size_hint_y=None,
                          height=44,
@@ -1214,7 +1289,7 @@ class SoloGoalScreen(Screen):
         turn_button.bind(on_release=turn_drop.open)
 
     def on_point_goal(self, thing, stuff):
-        self.goals.points.text = f'Points goal: {self.point_goal}'
+        self.goals.points.text = f'Points goal: {self.point_goal:,}'
         if self.turn_limit and self.point_goal:
             self.set_difficulty()
 
@@ -1240,6 +1315,9 @@ class SoloGoalScreen(Screen):
         self.goals.diff.text = diff
 
     def to_menu_screen(self):
+        number_screen = [screen for screen in self.parent.screens if screen.name == 'number'][0]
+        number_screen.num_players = 0
+        number_screen.num_label.text = 'Players Selected: '
         self.parent.current = 'menu'
 
 
@@ -1275,7 +1353,7 @@ class SoloGameScreen(Screen):
         name_area.font_size = 30
         name_area.bold = True
 
-        round_area.text = f'Round: {str(0)}'
+        round_area.text = 'Round: 0'
         total_plus_area.text = 'Total + Round: 0'
         prog_area.text = f'Turns: {self.turn} / {self.turn_limit}'
 
@@ -1302,10 +1380,10 @@ class SoloGameScreen(Screen):
         if self.base.current_player.total_score >= self.point_goal or self.turn > self.turn_limit:
             if self.base.current_player.total_score >= self.point_goal:
                 message = f'{self.base.current_player.name.title()} wins!\n\n' \
-                    f'With {self.base.current_player.total_score} points!\n\nIn {self.turn - 1} turns!'
+                    f'With {self.base.current_player.total_score:,} points!\n\nIn {self.turn - 1} turns!'
             else:
                 message = f'Oh no, {self.base.current_player.name.title()}!\n\n' \
-                    f'You\'re out of turns\n\nand only got {self.base.current_player.total_score} points.'
+                    f'You\'re out of turns\n\nand only got {self.base.current_player.total_score:,} points.'
             for screen in self.parent.screens:
                 if screen.name == 'results':
                     screen.message = message

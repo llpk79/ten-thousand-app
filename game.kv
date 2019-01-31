@@ -46,6 +46,21 @@ ScreenManager:
 <MyOwnSelfButton>:
 
 <BackButton>:
+    text: 'BACK'
+    pos_hint: {'x': .05, 'y': .05}
+    font_size: 14
+    size_hint: (.075, .05)
+    color: rgba(colors['text'])
+    background_normal: ''
+    background_color: rgba(colors['prime dark'])
+
+<Exit>:
+    text: 'EXIT'
+    pos_hint: {'x': .05, 'y': .05}
+    size_hint: .075, .05
+    background_normal: ''
+    background_color: rgba(colors['prime dark'])
+
 
 <Background@Image>:
     source: 'images/tabletop4.jpg'
@@ -77,13 +92,6 @@ ScreenManager:
         pos_hint: {'x': .325, 'y': 0.6}
         background_normal: ''
         background_color: rgba(colors['prime dark'])
-#   Label:
-#       text: 'Pass your device around to play.\nCast to a larger screen for the best experience!'
-#       halign: 'center'
-#       color: rgba(colors['text'])
-#       font_size: 25
-#       size_hint: .5, .1
-#       pos_hint: {'x': .25, 'y': .525}
     MyOwnSelfButton:
         text: 'PLAY VS COMPUTER'
         color: rgba(colors['text'])
@@ -92,13 +100,6 @@ ScreenManager:
         pos_hint: {'x': .325, 'y': .4}
         background_normal: ''
         background_color: rgba(colors['prime dark'])
-#    Label:
-#        text: 'Play against a computer controlled player.'
-#        halign: 'center'
-#        color: rgba(colors['text'])
-#        font_size: 25
-#        size_hint: .5, .1
-#        pos_hint: {'x': .25, 'y': .3}
     SoloGameButton:
         text: 'CHALLENGE MODE'
         color: rgba(colors['text'])
@@ -107,13 +108,7 @@ ScreenManager:
         pos_hint: {'x': .325, 'y': .2}
         background_normal: ''
         background_color: rgba(colors['prime dark'])
-#    Label:
-#        text: 'Can you get enough points in a set number of turns to win?'
-#        halign: 'center'
-#        color: rgba(colors['text'])
-#        font_size: 25
-#        size_hint: .5, .1
-#        pos_hint: {'x': .25, 'y': .1}
+    Exit:
 
 <ResultsScreen>:
     name: 'results'
@@ -124,17 +119,16 @@ ScreenManager:
         spacing: 5
         padding: [5]
         Button:
-            text: 'PLAY AGAIN?'
+            text: 'PLAY AGAIN'
             font_size: 30
             on_press: root.play_again()
             background_normal: ''
             background_color: rgba(colors['prime dark'])
-        Button:
+        Exit:
             text: 'EXIT'
             font_size: 30
-            on_press: root.exit()
-            background_normal: ''
-            background_color: rgba(colors['prime dark'])
+            size_hint: 1, 1
+            pos_hint: {'x': 0, 'y': 0}
 
 <PlayerNameScreen>:
     name: 'name'

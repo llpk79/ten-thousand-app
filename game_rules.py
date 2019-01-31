@@ -1,6 +1,7 @@
-msg = """
-                    Welcome to Ten Thousand
-                           The Game!
+msg1 = """
+Welcome to Ten Thousand!
+"""
+msg2 = """
 Objective:
     Score the most points.
     If a player ends with 10,000 points or more, other players have one turn to beat them.
@@ -17,6 +18,7 @@ To score:
 
 To play:
     Double tap or place dice you want to keep above the line.
+    You must get one scoring die on each throw or your turn is over and you lose your points for the round.
     If all of the dice you've kept are scoring dice the line will turn green.
     Roll again if you want to risk your points and try for more, or keep what you've got so far.
     You must have 500 points or more in one turn to be able to start saving them.
