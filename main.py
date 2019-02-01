@@ -204,6 +204,9 @@ class PlayerNameScreen(Screen):
             goal = [screen for screen in self.parent.screens if screen.name == 'goal'][0]
             goal.turn_limit = 0
             goal.point_goal = 0
+            goal.goals.diff.text = 'Difficulty:'
+            goal.goals.points.text = 'Points goal:'
+            goal.goals.turns.text = 'Turn limit:'
             self.parent.current = 'goal'
         self.clear_widgets(self.children[:-2])
 
@@ -520,6 +523,7 @@ class ResultsScreen(Screen):
     def reset_goal_screen(self, screen):
         screen.turn_limit = 0
         screen.point_goal = 0
+        screen.goals.diff.text = 'Difficulty:'
 
     def reset_solo_screen(self, screen):
         screen.base.info.box.clear_widgets()
@@ -715,7 +719,7 @@ class InformationStation(FloatLayout):
 
             lil_box.add_widget(Label(id='name',
                                      text=player.name.title(),
-                                     size_hint=(.22, 1),
+                                     size_hint=(.2, 1),
                                      font_size=22,
                                      text_size=(lil_box.width, None),
                                      shorten=True,
@@ -723,7 +727,7 @@ class InformationStation(FloatLayout):
             total = Label(id='total',
                           text=str(player.total_score),
                           font_size=22,
-                          size_hint=(.6, 1))
+                          size_hint=(.62, 1))
             lil_box.add_widget(total)
 
             self.box.add_widget(lil_box)
@@ -887,7 +891,7 @@ class SixKeepersPopup(MyPopup):
         self.content = label
 
 
-class ThresholdNotMet(Popup):
+class ThresholdNotMet(MyPopup):
     def __init__(self, **kwargs):
         super(ThresholdNotMet, self).__init__(**kwargs)
 
@@ -899,7 +903,7 @@ class ThresholdNotMet(Popup):
         self.content = label
 
 
-class FarklePopup(Popup):
+class FarklePopup(MyPopup):
     def __init__(self, **kwargs):
         super(FarklePopup, self).__init__(**kwargs)
 
@@ -1318,6 +1322,9 @@ class SoloGoalScreen(Screen):
         number_screen = [screen for screen in self.parent.screens if screen.name == 'number'][0]
         number_screen.num_players = 0
         number_screen.num_label.text = 'Players Selected: '
+        self.goals.diff.text = 'Difficulty:'
+        self.goals.points.text = 'Points goal:'
+        self.goals.turns.text = 'Turn limit:'
         self.parent.current = 'menu'
 
 
