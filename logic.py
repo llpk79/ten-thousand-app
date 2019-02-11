@@ -35,7 +35,12 @@ class Game:
     @staticmethod
     def is_three_pair(choice):
         choice = sorted(choice)
-        return len(choice) == 6 and choice[0] == choice[1] and choice[2] == choice[3] and choice[4] == choice[5]
+        return (len(choice) == 6 and
+                choice[0] == choice[1] and
+                choice[2] == choice[3] and
+                choice[4] == choice[5] and
+                (choice[0] != choice[2] and choice[0] != choice[4]) and
+                choice[2] != choice[4])
 
     @staticmethod
     def is_straight(choice):
