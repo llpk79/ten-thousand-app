@@ -3,12 +3,12 @@ import kivy
 
 kivy.require('1.10.1')
 
+from kivy.core.window import Window
 from kivy.graphics import *
 from kivy.animation import Animation
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.lang import Builder
-from kivy.properties import ObjectProperty, StringProperty, ListProperty, NumericProperty, BooleanProperty
+from kivy.properties import ObjectProperty, StringProperty, ListProperty, NumericProperty
 from kivy.uix.button import Button
 from kivy.uix.dropdown import DropDown
 from kivy.uix.textinput import TextInput
@@ -60,7 +60,7 @@ class PlayerNumberScreen(Screen):
             self.cont.disabled = True
 
         player_num_button = Button(text='SET NUMBER OF PLAYERS',
-                                   font_size=30,
+                                   font_size=75,
                                    size_hint=(.4, .1),
                                    pos_hint={'x': .3, 'y': .65},
                                    background_normal='',
@@ -72,7 +72,7 @@ class PlayerNumberScreen(Screen):
             btn = Button(text=num,
                          id=str(i),
                          size_hint_y=None,
-                         height=44,
+                         height=125,
                          background_normal='',
                          background_color=rgba(colors['second']))
             btn.bind(on_release=lambda button: num_drop.select(int(button.id)))
@@ -82,7 +82,7 @@ class PlayerNumberScreen(Screen):
 
         add_comp_player = Button(text='COMPUTER FRIEND: N0',
                                  id='compy',
-                                 font_size=30,
+                                 font_size=75,
                                  size_hint=(.4, .1),
                                  pos_hint={'x': .3, 'y': .45},
                                  background_normal='',
@@ -98,6 +98,7 @@ class PlayerNumberScreen(Screen):
             btn.text = 'COMPUTER FRIEND: NO'
 
     def set_comp_player(self, *args):
+        mode = ''
         names = [screen for screen in self.parent.screens if screen.name == 'name'][0]
         if names.game_mode == 'comp':
             names.game_mode = mode = 'game'
@@ -150,7 +151,6 @@ class PlayerNameScreen(Screen):
             if len(self.player_names) == self.num_players:
                 self.active_game = Game(self.player_names)
 
-                game = [screen for screen in self.parent.screens if screen.name == 'game'][0]
                 if self.game_mode == 'comp':
                     self.active_game.player_list[-1].comp_player = True
 
@@ -167,24 +167,26 @@ class PlayerNameScreen(Screen):
         for i in range(1, self.num_players + 1):
             if self.game_mode == 'comp' and i == self.num_players:
                 text = 'Enter Computer Player Name:'
-                pos = {'x': .1, 'y': .4 + (self.num_players / 10) - (i * .15)}
+                font_size = 60
+                pos = {'x': .1, 'y': .715 + (self.num_players / 30) - (i * .135)}
             else:
                 text = f'Enter Player {i}\'s name:'
-                pos = {'x': .15, 'y': .4 + (self.num_players / 10) - (i * .15)}
+                font_size = 60
+                pos = {'x': .15, 'y': .715 + (self.num_players / 30) - (i * .135)}
 
             label = Label(text=text,
-                          font_size=30,
+                          font_size=60,
                           color=rgba(colors['text']),
                           pos_hint=pos,
                           size_hint=(.25, .1),
                           id=str(i))
             self.add_widget(label)
             input_name = (FocusInput(multiline=False,
-                                     font_size=30,
-                                     pos_hint={'x': .475, 'y': .4 + (self.num_players / 10) - (i * .15)},
+                                     font_size=60,
+                                     pos_hint={'x': .475, 'y': .715 + (self.num_players / 30) - (i * .135)},
                                      size_hint=(.35, .09)))
-            if i == 1:
-                input_name.focus = True
+            # if i == 1:
+            #     input_name.focus = True
             self.add_widget(input_name)
 
     def reset_num_screen(self):
@@ -283,20 +285,19 @@ class GameScreen(Screen):
 
         for player in self.base.list_o_players:
             player_score = PlayerScore(id=player.name,
-                                       pos=(self.base.score_area.x, 550))
+                                       pos=(self.base.score_area.x, self.base.top + 10))
 
             name_area = player_score.name
             round_area = player_score.round
             total_area = player_score.total
             total_plus_area = player_score.total_plus
 
-            name_area.font_size = 30
             name_area.bold = True
             name_area.text = player.name.title()
 
             round_area.text = 'Round: 0'
             total_area.text = 'Total: 0'
-            total_plus_area.text = 'Total + Round: 0'
+            total_plus_area.text = 'Round + Total: 0'
 
             player.score_display = player_score
 
@@ -422,22 +423,24 @@ class GameScreen(Screen):
         indicator_pos = self.base.current_player.info.children[2]
         indicator = self.base.info.children[0]
         anim = Animation(pos=indicator_pos.pos, d=.25)
-        anim &= Animation(scale=.25, d=.2)
+        anim &= Animation(scale=.5, d=.2)
         anim.start(indicator)
 
+    # noinspection PyArgumentList
     def animate_score_out(self):
         curr_display = self.base.current_player.score_display
-        anim = Animation(pos=(self.base.score_area.x + 4, 550), d=.25)
+        anim = Animation(pos=(self.base.score_area.x + 4, self.base.top + 10), d=.25)
         anim.bind(on_complete=lambda animation, display: self.animate_score_in(display))
         anim.start(curr_display)
 
     def add_new_display(self, pos):
         new_display = self.base.current_player.score_display
         new_display.size_hint_x = .692
-        new_display.pos = (pos[0], 555)
+        new_display.pos = (pos[0], self.base.top + 10)
         self.base.add_widget(new_display)
         return new_display
 
+    # noinspection PyArgumentList
     def animate_score_in(self, curr_display):
         pos = curr_display.pos
         self.base.score_area.remove_widget(curr_display)
@@ -470,7 +473,7 @@ class ResultsScreen(Screen):
                               text=self.message,
                               color=rgba(colors['text']),
                               halign='center',
-                              font_size=40,
+                              font_size=90,
                               bold=True,
                               size_hint=(.5, .5),
                               pos_hint={'x': .25, 'y': .35}))
@@ -653,7 +656,7 @@ class Dice(Widget):
         new_dice = []
 
         for x, pos in zip(roll, positions[:num_dice + 1]):
-            scatter = DieScatter(id=str(x), scale_max=.8, scale=.7)
+            scatter = DieScatter(id=str(x), scale=1.6)
             image = Image(source=die_images[x])
 
             scatter.add_widget(image)
@@ -679,6 +682,7 @@ class Dice(Widget):
         if self.parent.current_player.comp_player:
             self.parent.parent.continue_overlord_turn()
 
+    # noinspection PyArgumentList
     def remove_dice(self, dice):
         anim = Animation(pos=(-50, -50), d=0.5, t='in_out_quad')
         anim.bind(on_complete=lambda x, y: self.complete(y))
@@ -713,21 +717,21 @@ class InformationStation(FloatLayout):
         for i, player in enumerate(base.list_o_players):
             lil_box = BoxLayout(id=player.name)
             turn_indicator = Widget(id='turn',
-                                    size_hint=(.18, .1),
-                                    pos_hint={'x': 0, 'y': .4})
+                                    size_hint=(.025, 1),
+                                    pos_hint={'x': 0, 'y': .45})
             lil_box.add_widget(turn_indicator)
 
             lil_box.add_widget(Label(id='name',
                                      text=player.name.title(),
-                                     size_hint=(.2, 1),
-                                     font_size=22,
-                                     text_size=(lil_box.width, None),
+                                     halign='left',
+                                     size_hint=(.6, 1),
+                                     pos_hint={'x': .025, 'y': 0},
                                      shorten=True,
                                      shorten_from='right'))
             total = Label(id='total',
                           text=str(player.total_score),
-                          font_size=22,
-                          size_hint=(.62, 1))
+                          size_hint=(.375, 1),
+                          pos_hint={'x': .525, 'y': 0})
             lil_box.add_widget(total)
 
             self.box.add_widget(lil_box)
@@ -751,10 +755,10 @@ class RulesButton(Button):
     def __init__(self, **kwargs):
         super(RulesButton, self).__init__(**kwargs)
 
+        self.popup = RulesPopup()
+
     def on_press(self):
-        if not self.parent.parent.current_player.comp_player:
-            popup = RulesPopup()
-            popup.open()
+        self.popup.open()
 
 
 class KeepAll(Button):
@@ -777,7 +781,7 @@ class MyPopup(Popup):
 
         self.title_align = 'center'
         self.separator_color = rgba(colors['second'])
-        self.size_hint = (.4, .3)
+        self.size_hint = (.6, .5)
 
 
 class RulesPopup(MyPopup):
@@ -787,11 +791,14 @@ class RulesPopup(MyPopup):
         self.title = 'How To Play'
 
         label = Label(text=msg1,
+                      font_size=40,
                       halign='center',
-                      pos_hint={'x': 0, 'y': .475})
+                      pos_hint={'x': 0, 'y': .45})
         label2 = Label(text=msg2,
+                       font_size=35,
                        halign='left',
-                       pos_hint={'x': 0, 'y': 0})
+                       size_hint=(1, .6),
+                       pos_hint={'x': 0, 'y': .1})
         container = FloatLayout()
         container.add_widget(label2)
         container.add_widget(label)
@@ -809,10 +816,10 @@ class YouSurePopup(MyPopup):
 
         label = Label(text='You still have points on the board!',
                       halign='center',
-                      pos_hint={'x': 0, 'y': .2})
+                      pos_hint={'x': 0, 'y': .225})
 
         btn = Button(text='MEH, I DON\'T WANT THOSE.',
-                     size_hint=(.6, .2),
+                     size_hint=(.6, .4),
                      pos_hint={'x': .2, 'y': .1},
                      background_normal='',
                      background_color=rgba(colors['prime dark']))
@@ -855,13 +862,13 @@ class ReallyExit(MyPopup):
                       halign='center',
                       pos_hint={'x': 0, 'y': .3})
         yes_go = Button(text='Exit',
-                        size_hint=(.4, .1),
+                        size_hint=(.4, .4),
                         pos_hint={'x': .55, 'y': .1},
                         background_normal='',
                         background_color=rgba(colors['prime dark']))
         yes_go.bind(on_release=self.quit)
         no_stay = Button(text='Stay',
-                         size_hint=(.4, .1),
+                         size_hint=(.4, .4),
                          pos_hint={'x': .05, 'y': .1},
                          background_normal='',
                          background_color=rgba(colors['prime dark']))
@@ -889,6 +896,7 @@ class SixKeepersPopup(MyPopup):
                       halign='center')
 
         self.content = label
+        self.size_hint = (.45, .3)
 
 
 class ThresholdNotMet(MyPopup):
@@ -909,10 +917,11 @@ class FarklePopup(MyPopup):
 
         self.title = 'Oh No!'
 
-        label = Label(text='You did\'nt get any keepers! Your turn is over.\n\n:(',
+        label = Label(text='You didn\'t get any keepers! Your turn is over.\n\n:(',
                       halign='center')
 
         self.content = label
+        self.size_hint = (.5, .4)
 
 
 class NonKeeperKept(MyPopup):
@@ -924,7 +933,7 @@ class NonKeeperKept(MyPopup):
         label = Label(text='You have non-scoring dice in the scoring area.'
                            '\n\nRemove non-scoring dice to turn line green and continue',
                       halign='center',
-                      pos_hint={'x': 0, 'y': .3})
+                      pos_hint={'x': 0, 'y': .25})
         btn = RulesButton(size_hint=(.5, .3),
                           pos_hint={'x': .25, 'y': .1})
         layout = FloatLayout()
@@ -932,7 +941,7 @@ class NonKeeperKept(MyPopup):
         layout.add_widget(btn)
 
         self.content = layout
-        self.size_hint = (.5, .4)
+        self.size_hint = (.7, .6)
 
 
 class EndTurn(Button):
@@ -1029,13 +1038,15 @@ class ReallyQuit(MyPopup):
                       halign='center',
                       pos_hint={'x': 0, 'y': .3})
         yes_go = Button(text='Quit',
-                        size_hint=(.4, .1),
+                        font_size=75,
+                        size_hint=(.4, .4),
                         pos_hint={'x': .55, 'y': .1},
                         background_normal='',
                         background_color=rgba(colors['prime dark']))
         yes_go.bind(on_release=self.quit)
         no_stay = Button(text='Stay',
-                         size_hint=(.4, .1),
+                         font_size=75,
+                         size_hint=(.4, .4),
                          pos_hint={'x': .05, 'y': .1},
                          background_normal='',
                          background_color=rgba(colors['prime dark']))
@@ -1150,7 +1161,7 @@ class Base(FloatLayout):
         if score_type == 'basket':
             self.current_player.score_display.round.text = 'Round: {:,}'.format(self.current_player.round_score +
                                                                                 self.die_basket.basket_score)
-            self.current_player.score_display.total_plus.text = 'Total + Round: {:,}'.format(
+            self.current_player.score_display.total_plus.text = 'Round + Total: {:,}'.format(
                 self.current_player.total_score +
                 self.current_player.round_score +
                 self.die_basket.basket_score)
@@ -1165,11 +1176,12 @@ class Base(FloatLayout):
         self.current_player.score_display.progress.text = f'{self.parent.turn} / {self.parent.turn_limit}'
 
     def update_solo_total_display(self):
-        self.current_player.score_display.total_plus.text = 'Total + Round: {:,}'.format(
+        self.current_player.score_display.total_plus.text = 'Round + Total: {:,}'.format(
                 self.current_player.total_score +
                 self.current_player.round_score +
                 self.die_basket.basket_score)
-        self.current_player.info.children[0].text = f'{self.current_player.total_score:,} / {self.parent.point_goal:,}'
+        self.current_player.info.children[0].text = \
+            f'{self.current_player.total_score:,} / \n{self.parent.point_goal:,}'
 
 
 class DieHolder(Widget):
@@ -1250,19 +1262,19 @@ class SoloGoalScreen(Screen):
         self.cont.disabled = True
         intro_label = Label(text='Set up your own game for a customized challenge!',
                             halign='center',
-                            font_size=30,
+                            font_size=100,
                             pos_hint={'x': .2, 'y': .825},
                             size_hint=(.6, .1))
         point_button = Button(text='SET POINTS GOAL',
                               pos_hint={'x': .1, 'y': .7},
                               size_hint=(.3, .1),
-                              font_size=30,
+                              font_size=75,
                               background_normal='',
                               background_color=rgba(colors['prime dark']))
         turn_button = Button(pos_hint={'x': .6, 'y': .7},
                              size_hint=(.3, .1),
                              text='SET TURN LIMIT',
-                             font_size=30,
+                             font_size=75,
                              background_normal='',
                              background_color=rgba(colors['prime dark']))
         self.add_widget(intro_label)
@@ -1274,7 +1286,7 @@ class SoloGoalScreen(Screen):
             btn = Button(text=f'{x:,}',
                          id=str(x),
                          size_hint_y=None,
-                         height=44,
+                         height=110,
                          background_normal='',
                          background_color=rgba(colors['second']))
             btn.bind(on_release=lambda button: point_drop.select(int(button.id)))
@@ -1285,7 +1297,7 @@ class SoloGoalScreen(Screen):
         for x in [5, 10, 15, 20, 30]:
             btn = Button(text=str(x),
                          size_hint_y=None,
-                         height=44,
+                         height=110,
                          background_normal='',
                          background_color=rgba(colors['second']))
             btn.bind(on_release=lambda button: turn_drop.select(int(button.text)))
@@ -1303,6 +1315,7 @@ class SoloGoalScreen(Screen):
             self.set_difficulty()
 
     def set_difficulty(self):
+        diff = 'Difficulty: '
         points_per_turn = self.point_goal // self.turn_limit
         if 0 < points_per_turn <= 125:
             diff = 'Difficulty: Really Easy'
@@ -1357,12 +1370,11 @@ class SoloGameScreen(Screen):
         prog_area = player_score.progress
 
         name_area.text = player.name.title()
-        name_area.font_size = 30
         name_area.bold = True
 
         round_area.text = 'Round: 0'
-        total_plus_area.text = 'Total + Round: 0'
-        prog_area.text = f'Turns: {self.turn} / {self.turn_limit}'
+        total_plus_area.text = 'Round + Total: 0'
+        prog_area.text = f'Turns: {self.turn} / \n{self.turn_limit}'
 
         player.score_display = player_score
 
@@ -1422,6 +1434,9 @@ class GameApp(App):
         self.title = 'Ten Thousand'
         return self.root
 
+
+Window.softinput_mode = 'below_target'
+Window.keyboard_padding = 5
 
 if __name__ == '__main__':
     GameApp().run()
