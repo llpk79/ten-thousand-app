@@ -48,8 +48,7 @@ ScreenManager:
 <BackButton>:
     text: 'BACK'
     pos_hint: {'x': .05, 'y': .05}
-    font_size: 14
-    size_hint: (.075, .05)
+    size_hint: (.1, .075)
     color: rgba(colors['text'])
     background_normal: ''
     background_color: rgba(colors['prime dark'])
@@ -57,7 +56,7 @@ ScreenManager:
 <Exit>:
     text: 'EXIT'
     pos_hint: {'x': .05, 'y': .05}
-    size_hint: .075, .05
+    size_hint: .1, .075
     background_normal: ''
     background_color: rgba(colors['prime dark'])
 
@@ -73,7 +72,7 @@ ScreenManager:
     Label:
         text: 'Welcome to Ten Thousand!'
         halign: 'center'
-        font_size: 34
+        font_size: 100
         color: rgba(colors['text'])
         size_hint: .4, .1
         pos_hint: {'x': .3, 'y': .8}
@@ -81,13 +80,12 @@ ScreenManager:
         text: 'A dice game'
         halign: 'center'
         color: rgba(colors['text'])
-        font_size: 20
         size_hint: .2, .1
         pos_hint: {'x': .4, 'y': .725}
     FriendsButton:
         text: 'PLAY WITH FRIENDS'
         color: rgba(colors['text'])
-        font_size: 30
+        font_size: 75
         size_hint: .35, .1
         pos_hint: {'x': .325, 'y': 0.6}
         background_normal: ''
@@ -95,7 +93,7 @@ ScreenManager:
     MyOwnSelfButton:
         text: 'PLAY VS COMPUTER'
         color: rgba(colors['text'])
-        font_size: 30
+        font_size: 75
         size_hint: .35, .1
         pos_hint: {'x': .325, 'y': .4}
         background_normal: ''
@@ -103,7 +101,7 @@ ScreenManager:
     SoloGameButton:
         text: 'CHALLENGE MODE'
         color: rgba(colors['text'])
-        font_size: 30
+        font_size: 75
         size_hint: .35, .1
         pos_hint: {'x': .325, 'y': .2}
         background_normal: ''
@@ -120,13 +118,13 @@ ScreenManager:
         padding: [5]
         Button:
             text: 'PLAY AGAIN'
-            font_size: 30
+            font_size: 75
             on_press: root.play_again()
             background_normal: ''
             background_color: rgba(colors['prime dark'])
         Exit:
             text: 'EXIT'
-            font_size: 30
+            font_size: 75
             size_hint: 1, 1
             pos_hint: {'x': 0, 'y': 0}
 
@@ -138,7 +136,6 @@ ScreenManager:
 
 <PlayerNumButton>:
     color: rgba(colors['text'])
-    font_size: 30
     halign: 'center'
     background_normal: ''
     background_color: rgba(colors['prime dark'])
@@ -151,14 +148,14 @@ ScreenManager:
     Label:
         text: 'How many people are playing?'
         halign: 'center'
-        font_size: 30
+        font_size: 100
         color: rgba(colors['text'])
         size_hint: (.275, .075)
         pos_hint: {'x': .35, 'y': .8}
     Label:
         id: num_label
         text: 'Players Selected: '
-        font_size: 30
+        font_size: 75
         size_hint: .2, .1
         pos_hint: {'x': .4, 'y': .15}
     Button:
@@ -166,7 +163,7 @@ ScreenManager:
         size_hint: .2, .1
         pos_hint: {'x': .4, 'y': .05}
         text: 'CONTINUE'
-        font_size: 30
+        font_size: 75
         background_normal: ''
         background_color: rgba(colors['prime dark'])
         on_release: root.parent.current = 'name'
@@ -187,12 +184,10 @@ ScreenManager:
             rgba: root.valid_basket
         Rectangle:
             pos: self.x, self.y
-            size: self.width, self.x + 3
+            size: self.width, self.x + 4
     Label:
-        text: 'Drag Dice To Line Or Double Click To Score'
-        font_size: 18
-        bold: True
-        #color: rgba(colors['text'])
+        text: 'Drag Dice To Line Or Double Tap To Score'
+        font_size: 40
         halign: 'center'
         pos_hint: {'x': self.x, 'y': -0.425}
     KeeperBox:
@@ -209,7 +204,6 @@ ScreenManager:
         DieHolder:
 
 <PlayerArea@Label>:
-    font_size: 22
     color: rgba(colors['text'])
     canvas.before:
         Color:
@@ -226,21 +220,21 @@ ScreenManager:
     PlayerArea:
         id: name
         text_size: self.width, None
-        size_hint: .8, 1
+        size_hint: .275, 1
         shorten: True
         shorten_from: 'right'
         halign: 'center'
     PlayerArea:
         id: round
-        size_hint: .55, 1
+        size_hint: .2, 1
         halign: 'left'
     PlayerArea:
         id: total
-        size_hint: .6, 1
+        size_hint: .2, 1
         halign: 'left'
     PlayerArea:
         id: total_plus
-        size_hint: .85, 1
+        size_hint: .325, 1
         halign: 'left'
 
 <InformationStation>:
@@ -248,8 +242,8 @@ ScreenManager:
     orientation: 'vertical'
     size_hint: .3, 1
     pos_hint: {'x': .7, 'y': 0}
-    padding: [3]
-    spacing: 5
+#    padding: [3]
+    spacing: 10
     canvas:
         Color:
             rgba: rgba(colors['second'])
@@ -258,7 +252,7 @@ ScreenManager:
             pos: root.pos
     Label:
         text: 'Player Totals'
-        font_size: 25
+        font_size: 75
         size_hint: .95, .1
         pos_hint: {'x': .025, 'y': .875}
         canvas.before:
@@ -288,14 +282,14 @@ ScreenManager:
 <Quit>:
     text: 'QUIT'
     color: rgba(colors['text'])
-    font_size: 30
+    font_size: 75
     background_normal: ''
     background_color: rgba(colors['prime dark'])
 
 <Roll>:
     text: 'ROLL \'EM!'
     color: rgba(colors['text'])
-    font_size: 30
+    font_size: 90
     background_normal: ''
     background_color: rgba(colors['prime dark'])
 
@@ -303,21 +297,21 @@ ScreenManager:
     text: 'END TURN'
     color: rgba(colors['text'])
     halign: 'center'
-    font_size: 30
+    font_size: 90
     background_normal: ''
     background_color: rgba(colors['prime dark'])
 
 <KeepAll>:
     text: 'SELECT ALL'
     color: rgba(colors['text'])
-    font_size: 30
+    font_size: 90
     background_normal: ''
     background_color: rgba(colors['prime dark'])
 
 <RulesButton>:
     text: 'RULES'
     color: rgba(colors['text'])
-    font_size: 30
+    font_size: 75
     background_normal: ''
     background_color: rgba(colors['prime dark'])
 
@@ -379,23 +373,23 @@ ScreenManager:
         spacing: 5
         Label:
             id: points
-            font_size: 30
+            font_size: 75
             halign: 'left'
             text: 'Points goal:'
         Label
             id: turns
-            font_size: 30
+            font_size: 75
             text: 'Turn limit:'
         Label
             id: diff
-            font_size: 30
+            font_size: 75
             text: 'Difficulty:'
     Button:
         id: cont
         size_hint: .2, .1
         pos_hint: {'x': .4, 'y': .05}
         text: 'CONTINUE'
-        font_size: 30
+        font_size: 75
         background_normal: ''
         background_color: rgba(colors['prime dark'])
         on_release: root.parent.current = 'name'
