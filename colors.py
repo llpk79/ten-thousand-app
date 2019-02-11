@@ -8,4 +8,4 @@ colors = {'prime': '#00838f',
           'second off': '#519657',
           'text': '#ffffff',
           'error': '#B00020',
-          'valid': '#003300'}
+          'valid': '#4c8c4a'}
