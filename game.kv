@@ -9,7 +9,7 @@
 
 ScreenManager:
     id: screen_manager
-    transition: FallOutTransition()
+    transition: FallOutTransition(duration = .3)
     MenuScreen:
         id: menu
         name: 'menu'
@@ -134,12 +134,6 @@ ScreenManager:
     BackButton:
         on_release: root.to_prev_screen()
 
-<PlayerNumButton>:
-    color: rgba(colors['text'])
-    halign: 'center'
-    background_normal: ''
-    background_color: rgba(colors['prime dark'])
-
 <PlayerNumberScreen>:
     num_label: num_label
     cont: cont
@@ -224,25 +218,28 @@ ScreenManager:
         shorten: True
         shorten_from: 'right'
         halign: 'center'
+        bold: True
     PlayerArea:
         id: round
         size_hint: .2, 1
         halign: 'left'
+        text: 'Round: 0'
     PlayerArea:
         id: total
         size_hint: .2, 1
         halign: 'left'
+        text: 'Total: 0'
     PlayerArea:
         id: total_plus
         size_hint: .325, 1
         halign: 'left'
+        text: 'Round + Total: 0'
 
 <InformationStation>:
     box: box
     orientation: 'vertical'
     size_hint: .3, 1
     pos_hint: {'x': .7, 'y': 0}
-#    padding: [3]
     spacing: 10
     canvas:
         Color:
