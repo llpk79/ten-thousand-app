@@ -52,6 +52,7 @@ class PlayerNumDropDown(DropDown):
 
 
 class BackButton(Button):
+
     """Button for returning to previous screen."""
 
     def __init__(self, **kwargs):
@@ -59,6 +60,7 @@ class BackButton(Button):
 
 
 class PlayerNumberScreen(Screen):
+
     """Screen for setting number of players.
 
     Inherits from Screen.
@@ -161,6 +163,7 @@ class PlayerNumberScreen(Screen):
 
 
 class FocusInput(TextInput):
+
     """Text input box adds player name after text entered if box becomes unfocused.
 
     Makes entering names easier.
@@ -170,9 +173,8 @@ class FocusInput(TextInput):
     def __init__(self, **kwargs) -> None:
         """Disables write_tab and multiline attributes, sets font_size and  size_hint.
 
-        :param kwargs: passed to super
+        :param kwargs: Passed to super
         """
-
         super(FocusInput, self).__init__(**kwargs)
 
         self.multiline = False
@@ -186,17 +188,18 @@ class FocusInput(TextInput):
         :param widget: self
         :param invalid: True if gaining focus, False if loosing focus.
         """
-        print(widget, invalid)
         if self.parent and not self.focus:
             self.parent.add_player(widget, invalid)
 
 
 class PlayerNameScreen(Screen):
+
     """Screen for setting player names.
 
     Inherits from Screen.
     Overrides Screen.on_enter.
     """
+
     player_names = ListProperty()
     active_game = ObjectProperty()
     num_players = NumericProperty()
@@ -293,12 +296,15 @@ class PlayerNameScreen(Screen):
 
 
 class MenuScreen(Screen):
+
     """The main menu screen."""
+
     def __init__(self, **kwargs) -> None:
         super(MenuScreen, self).__init__(**kwargs)
 
 
 class FriendsButton(Button):
+
     """Button for choosing multiplayer game mode.
 
     Inherits from Button.
@@ -320,6 +326,7 @@ class FriendsButton(Button):
 
 
 class MyOwnSelfButton(Button):
+
     """Button to select single player v computer game mode.
 
     Inherits from Button.
@@ -343,6 +350,7 @@ class MyOwnSelfButton(Button):
 
 
 class SoloGameButton(Button):
+
     """Set game mode to challenge mode.
 
     Inherits from Button.
@@ -370,18 +378,23 @@ class SoloGameButton(Button):
 
 
 class PlayerScore(BoxLayout):
+
     """Empty box to hold PlayerScore(s)."""
+
     def __init__(self, **kwargs) -> None:
         super(PlayerScore, self).__init__(**kwargs)
 
 
 class ScoreArea(BoxLayout):
+
     """Empty box to hold player score labels."""
+
     def __init__(self, **kwargs) -> None:
         super(ScoreArea, self).__init__(**kwargs)
 
 
 class GameScreen(Screen):
+
     """Screen game is played on.
 
     Inherits from Screen.
@@ -436,7 +449,7 @@ class GameScreen(Screen):
         If we have a winner, put players in list_o_winners instead of back into list_o_players.
         Keep comp_player turns moving, schedule roll.on_press.
         """
-        if not any([player.total_score >= 2000 for player in self.base.list_o_players]):
+        if not any([player.total_score >= 10000 for player in self.base.list_o_players]):
             temp = self.base.list_o_players.popleft()
             self.base.current_player = temp
             self.base.list_o_players.append(temp)
@@ -515,7 +528,7 @@ class GameScreen(Screen):
         # comp_player is the first to reach the goal, stop!
         elif not winners and (self.base.current_player.total_score +
                               self.base.current_player.round_score +
-                              self.base.die_basket.basket_score) >= 2000:
+                              self.base.die_basket.basket_score) >= 10000:
             Clock.schedule_once(self.base.buttons.end_turn.on_press, 1.)
             return
 
@@ -617,6 +630,7 @@ class GameScreen(Screen):
 
 
 class ResultsScreen(Screen):
+
     """Screen displaying results and options to play again or quit app.
 
     Inherits from Screen.
@@ -734,6 +748,7 @@ class ResultsScreen(Screen):
 
 
 class DieScatter(Scatter):
+
     """Functional container for dice images
 
     Inherits from Scatter.
@@ -1005,6 +1020,7 @@ class InformationStation(FloatLayout):
 
 
 class GameButtonRow(BoxLayout):
+
     """Box for holding game operation buttons. Inherits from Box Layout."""
 
     roll = ObjectProperty()
@@ -1016,6 +1032,7 @@ class GameButtonRow(BoxLayout):
 
 
 class RulesButton(Button):
+
     """Launch RulesPopup. Inherits from Button."""
 
     def __init__(self, **kwargs) -> None:
@@ -1033,11 +1050,13 @@ class RulesButton(Button):
 
 
 class KeepAll(Button):
+
     """Button for adding all dice to the keeper_box.
 
     Inherits from Button.
     Overrides on_press.
     """
+
     def __init__(self, **kwargs) -> None:
         super(KeepAll, self).__init__(**kwargs)
 
@@ -1064,7 +1083,7 @@ class MyPopup(Popup):
         """
         super(MyPopup, self).__init__(**kwargs)
 
-        self.title_size = 50
+        self.title_size = 75
         self.title_align = 'center'
         self.separator_color = rgba(colors['second'])
         self.size_hint = (.6, .5)
@@ -1242,7 +1261,7 @@ class ThresholdNotMet(MyPopup):
     def __init__(self, **kwargs) -> None:
         """Set title. and content.
 
-        :param kwargs: Unused.
+        :param kwargs: Passed to super.
         """
         super(ThresholdNotMet, self).__init__(**kwargs)
 
@@ -1261,7 +1280,7 @@ class FarklePopup(MyPopup):
     def __init__(self, **kwargs) -> None:
         """Set title and content.
 
-        :param kwargs: Unused.
+        :param kwargs: Passed to super.
         """
         super(FarklePopup, self).__init__(**kwargs)
 
@@ -1415,6 +1434,7 @@ class Roll(Button):
 class ReallyQuit(MyPopup):
 
     """Confirm user intention to quit the game. Inherits from MyPopup."""
+
     def __init__(self, **kwargs) -> None:
         """Set title and content. Add buttons for staying in-game and quitting game.
 
@@ -1567,7 +1587,7 @@ class Base(FloatLayout):
             self.current_player.round_score = 0
 
     def update_display(self, score_type: str) -> None:
-        """Helper function calls fuctions based on score_type.
+        """Helper function calls functions based on score_type.
 
         :param score_type: May be: 'round', 'basket', 'total, 'progress', or 'solo total'.
         """
@@ -1615,13 +1635,17 @@ class Base(FloatLayout):
 
 
 class DieHolder(Widget):
+
     """Container for dice added to die_basket."""
+
     def __init__(self, **kwargs) -> None:
         super(DieHolder, self).__init__(**kwargs)
 
 
 class KeeperBox(BoxLayout):
+
     """Container for DieHolders."""
+
     def __init__(self, **kwargs) -> None:
         super(KeeperBox, self).__init__(**kwargs)
 
@@ -1634,6 +1658,7 @@ class DieBasket(FloatLayout):
     on_keepers checks validity of die added and updates scoring line color and round score as dice are added.
     Inherits from FloatLayout.
     """
+
     keepers = ListProperty()
     valid_basket = ListProperty()
     basket_score = NumericProperty()
@@ -1645,7 +1670,13 @@ class DieBasket(FloatLayout):
 
         self.valid_basket = rgba(colors['valid'])
 
-    def on_keepers(self, instance, value) -> None:
+    def on_keepers(self, *args: list) -> None:
+        """Check if newly added die is a keeper or completes a group of three.
+
+        Update keeper line and Roll button accordingly.
+
+        :param args: Unused.
+        """
         choice = [int(child.id) for child in self.keepers]
 
         score = self.active_game.keep_score(choice)
