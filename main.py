@@ -485,7 +485,7 @@ class GameScreen(Screen):
     def continue_overlord_turn(self) -> None:
         """See if there are any keepers and keep them, else end the turn."""
         scoring_dice = [die for die in self.base.active_game.choose_dice(
-            [die for die in self.base.dice.children if die not in self.base.buttons.roll.proto_keepers])]
+            [die for die in self.base.dice.children if die not in self.base.die_basket.old_keepers])]
 
         if not scoring_dice:
             Clock.schedule_once(self.base.buttons.end_turn.on_press, .5)
@@ -507,7 +507,7 @@ class GameScreen(Screen):
         winners = sorted(self.base.list_o_winners, key=lambda player: player.total_score, reverse=True)
 
         # if comp_player has six keepers, roll again.
-        if len(self.base.buttons.roll.proto_keepers) + len(self.base.die_basket.keepers) >= 6:
+        if len(self.base.die_basket.old_keepers) + len(self.base.die_basket.keepers) >= 6:
             Clock.schedule_once(self.base.buttons.roll.on_press, 1.)
             return
 
@@ -534,7 +534,7 @@ class GameScreen(Screen):
 
         # comp_player has 500 or more points and three or fewer dice to roll. Pretty good, stop.
         elif (self.base.current_player.round_score + self.base.die_basket.basket_score >= 500 and
-                len(self.base.buttons.roll.proto_keepers) + len(self.base.die_basket.keepers) >= 3):
+                len(self.base.die_basket.old_keepers) + len(self.base.die_basket.keepers) >= 3):
             Clock.schedule_once(self.base.buttons.end_turn.on_press, .1)
             return
 
@@ -552,7 +552,7 @@ class GameScreen(Screen):
         self.base.buttons.roll.text = 'ROLL \'EM!'
         self.base.current_player.round_score = 0
         self.base.die_basket.keepers.clear()
-        self.base.buttons.roll.proto_keepers.clear()
+        self.base.die_basket.old_keepers.clear()
         self.base.dice.remove_dice(self.base.dice.children)
         self.base.update_display('name')
         self.base.update_display('total')
@@ -820,20 +820,21 @@ class DieScatter(Scatter):
         """
         die_basket = self.parent.parent.die_basket
         keepers = die_basket.keepers
-        proto_keepers = self.parent.parent.buttons.roll.proto_keepers
+        old_keepers = die_basket.old_keepers
         die_holders = die_basket.keeper_box.children
 
         if self not in keepers:
             keepers.append(self)
             # trigger popup if a human is playing and has six scoring dice in the die_basket.
-            if (len(keepers) + len(proto_keepers) == 6 and
+            if (len(keepers) + len(old_keepers) == 6 and
                     die_basket.valid_basket == rgba(colors['valid']) and
                     not self.parent.parent.current_player.comp_player):
                 popup = SixKeepersPopup()
                 popup.open()
+                Clock.schedule_once(popup.dismiss, 2.)
 
             # find the position of the next die_holder in keeper_box for the new die to live.
-            die_holder = die_holders[(len(keepers) + len(proto_keepers)) - 1]
+            die_holder = die_holders[(len(keepers) + len(old_keepers)) - 1]
             anim = Animation(pos=(die_holder.pos[0] + 20, die_holder.pos[1]), d=0.5, t='out_quart')
             # find the direction to rotate the least.
             if self.rotation <= 180:
@@ -844,7 +845,7 @@ class DieScatter(Scatter):
 
         else:
             # if the die is still in die_basket and has moved from its die_holder, put it back.
-            for die_holder, keeper in zip(die_holders[len(proto_keepers):], keepers):
+            for die_holder, keeper in zip(die_holders[len(old_keepers):], keepers):
                 anim = Animation(pos=(die_holder.pos[0] + 20, die_holder.pos[1]), d=0.2)
                 anim.start(keeper)
 
@@ -852,14 +853,14 @@ class DieScatter(Scatter):
         """Remove die from list and reorganize the die_basket"""
         die_basket = self.parent.parent.die_basket
         keepers = die_basket.keepers
-        proto_keepers = self.parent.parent.buttons.roll.proto_keepers
+        old_keepers = die_basket.old_keepers
         die_holders = die_basket.keeper_box.children
 
         if self in keepers:
             keepers.remove(self)
 
         # any dice to the left of an empty slot slide to the right.
-        for die_holder, keeper in zip(die_holders[len(proto_keepers):], keepers):
+        for die_holder, keeper in zip(die_holders[len(old_keepers):], keepers):
             anim = Animation(pos=(die_holder.pos[0] + 20, die_holder.pos[1]), d=0.2)
             anim.start(keeper)
 
@@ -886,7 +887,7 @@ class Dice(Widget):
 
         :param num_dice:
         """
-        doomed_dice = [widget for widget in self.children if widget not in self.parent.buttons.roll.proto_keepers]
+        doomed_dice = [widget for widget in self.children if widget not in self.parent.die_basket.old_keepers]
         self.remove_dice(doomed_dice)
         self.num_dice = num_dice
         Clock.schedule_once(self.update_dice_two, .8)
@@ -1067,7 +1068,7 @@ class KeepAll(Button):
             return
         dice = self.parent.parent.dice.children
         for die in dice:
-            if (die not in self.parent.parent.buttons.roll.proto_keepers and
+            if (die not in self.parent.parent.die_basket.old_keepers and
                     die not in self.parent.parent.die_basket.keepers):
                 die.add_to_keepers()
 
@@ -1349,7 +1350,7 @@ class EndTurn(Button):
         # check if points are still on the board.
         elif (base.die_basket.valid_basket == rgba(colors['valid']) and
                 ([die for die in base.active_game.choose_dice([die for die in base.dice.children
-                                                               if die not in base.buttons.roll.proto_keepers])
+                                                               if die not in base.die_basket.old_keepers])
                     if die not in base.die_basket.keepers])):
             popup = YouSurePopup()
             popup.open()
@@ -1372,13 +1373,11 @@ class Roll(Button):
     Overrides on_press.
     """
 
-    proto_keepers = ListProperty()
-
     def __init__(self, **kwargs) -> None:
         super(Roll, self).__init__(**kwargs)
 
     def on_press(self, *args: list) -> None:
-        """Clear non-keepers, gray out keepers, add them to proto_keepers.
+        """Clear non-keepers, gray out keepers, add them to old_keepers.
 
         Call update_color, update_round_score, and update_dice.
 
@@ -1388,18 +1387,21 @@ class Roll(Button):
         # do nothing if comp_player turn.
         if self.parent.parent.current_player.comp_player and not args:
             return
+
         die_basket = self.parent.parent.die_basket
+        keepers = die_basket.keepers
+        old_keepers = die_basket.old_keepers
 
         if die_basket.valid_basket == rgba(colors['valid']):
-            for keeper in die_basket.keepers:
-                self.proto_keepers.append(keeper)
-            if len(self.proto_keepers) >= 6:
-                self.proto_keepers.clear()
-            self.parent.parent.dice.update_dice(6 - len(self.proto_keepers))
+            for keeper in keepers:
+                old_keepers.append(keeper)
+            if len(old_keepers) >= 6:
+                old_keepers.clear()
+            self.parent.parent.dice.update_dice(6 - len(old_keepers))
 
         self.parent.parent.update_round_score()
 
-        for keeper in self.proto_keepers:
+        for keeper in old_keepers:
             keeper.locked = True
 
         for keeper in die_basket.keepers:
@@ -1660,6 +1662,7 @@ class DieBasket(FloatLayout):
     """
 
     keepers = ListProperty()
+    old_keepers = ListProperty()
     valid_basket = ListProperty()
     basket_score = NumericProperty()
     active_game = ObjectProperty()
@@ -1914,7 +1917,7 @@ class SoloGameScreen(Screen):
         self.base.buttons.end_turn.text = 'END TURN'
         self.base.current_player.round_score = 0
         self.base.die_basket.keepers.clear()
-        self.base.buttons.roll.proto_keepers.clear()
+        self.base.die_basket.old_keepers.clear()
         self.base.dice.remove_dice(self.base.dice.children)
         self.base.update_display('round')
         self.base.update_display('progress')
