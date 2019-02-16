@@ -514,26 +514,26 @@ class GameScreen(Screen):
         # there's already a winner, keep rolling.
         elif winners and winners[0].total_score >= (self.base.current_player.total_score +
                                                     self.base.current_player.round_score +
-                                                    self.base.die_basket.basket_score):
+                                                    self.base.current_player.basket_score):
             Clock.schedule_once(self.base.buttons.roll.on_press, 1.)
             return
 
         # comp_player has the winning score, stop!
         elif winners and (self.base.current_player.total_score +
                           self.base.current_player.round_score +
-                          self.base.die_basket.basket_score) > winners[0].total_score:
+                          self.base.current_player.basket_score) > winners[0].total_score:
             Clock.schedule_once(self.base.buttons.end_turn.on_press, 1.)
             return
 
         # comp_player is the first to reach the goal, stop!
         elif not winners and (self.base.current_player.total_score +
                               self.base.current_player.round_score +
-                              self.base.die_basket.basket_score) >= 10000:
+                              self.base.current_player.basket_score) >= 10000:
             Clock.schedule_once(self.base.buttons.end_turn.on_press, 1.)
             return
 
         # comp_player has 500 or more points and three or fewer dice to roll. Pretty good, stop.
-        elif (self.base.current_player.round_score + self.base.die_basket.basket_score >= 500 and
+        elif (self.base.current_player.round_score + self.base.current_player.basket_score >= 500 and
                 len(self.base.die_basket.old_keepers) + len(self.base.die_basket.keepers) >= 3):
             Clock.schedule_once(self.base.buttons.end_turn.on_press, .1)
             return
@@ -1344,7 +1344,7 @@ class EndTurn(Button):
         # check that player has met first turn threshold.
         if (base.die_basket.valid_basket == rgba(colors['valid'])
                 and base.current_player.total_score == 0
-                and (base.current_player.round_score + base.die_basket.basket_score) < 500):
+                and (base.current_player.round_score + base.current_player.basket_score) < 500):
             popup = ThresholdNotMet()
             popup.open()
         # check if points are still on the board.
@@ -1428,7 +1428,7 @@ class Roll(Button):
             self.color = rgba(colors['text'])
             current_player = self.parent.parent.current_player
             if (current_player.total_score + current_player.round_score +
-                    self.parent.parent.die_basket.basket_score) >= 500:
+                    self.parent.parent.current_player.basket_score) >= 500:
                 self.parent.end_turn.text = 'KEEP POINTS'
                 self.text = 'RISK \'N ROLL!'
 
@@ -1559,20 +1559,20 @@ class Base(FloatLayout):
         return self.list_o_players
 
     def update_round_score(self, green_line=None) -> None:
-        """Add basket_score to round score and call update_display to reflect update.
+        """Add basket_score to round_score and call update_display to reflect update.
 
-        :param green_line: True when changing players to start with green line and active Roll button.
+        :param green_line: True when changing players to start with green scoring line and active Roll button.
         """
         die_basket = self.die_basket
         if die_basket.valid_basket == rgba(colors['valid']):
-            self.current_player.round_score += die_basket.basket_score
+            self.current_player.round_score += self.current_player.basket_score
             self.update_display('round')
 
             if not green_line:
                 die_basket.valid_basket = rgba(colors['error'])
                 self.buttons.roll.background_color = rgba(colors['prime off'])
 
-        die_basket.basket_score = 0
+        self.current_player.basket_score = 0
 
     def update_total_score(self) -> None:
         """Add round_score to total_score."""
@@ -1609,11 +1609,11 @@ class Base(FloatLayout):
         """
         if score_type == 'basket':
             self.current_player.score_display.round.text = 'Round: {:,}'.format(self.current_player.round_score +
-                                                                                self.die_basket.basket_score)
+                                                                                self.current_player.basket_score)
             self.current_player.score_display.total_plus.text = 'Round + Total: {:,}'.format(
                 self.current_player.total_score +
                 self.current_player.round_score +
-                self.die_basket.basket_score)
+                self.current_player.basket_score)
         if score_type == 'round':
             self.current_player.score_display.round.text = f'Round: {self.current_player.round_score:,}'
 
@@ -1631,7 +1631,7 @@ class Base(FloatLayout):
         self.current_player.score_display.total_plus.text = 'Round + Total: {:,}'.format(
                 self.current_player.total_score +
                 self.current_player.round_score +
-                self.die_basket.basket_score)
+                self.current_player.basket_score)
         self.current_player.info.children[0].text = \
             f'{self.current_player.total_score:,} / \n{self.parent.point_goal:,}'
 
@@ -1664,7 +1664,6 @@ class DieBasket(FloatLayout):
     keepers = ListProperty()
     old_keepers = ListProperty()
     valid_basket = ListProperty()
-    basket_score = NumericProperty()
     active_game = ObjectProperty()
     keeper_box = ObjectProperty()
 
@@ -1683,7 +1682,7 @@ class DieBasket(FloatLayout):
         choice = [int(child.id) for child in self.keepers]
 
         score = self.active_game.keep_score(choice)
-        self.basket_score = score
+        self.parent.current_player.basket_score = score
         self.parent.update_display('basket')
 
         # validate_choice returns a list of non-scoring dice.

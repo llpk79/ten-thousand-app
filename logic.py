@@ -123,6 +123,7 @@ class Player(object):
         """
         self.total_score = 0
         self.round_score = 0
+        self.basket_score = 0
         self.name = name
         self.score_display = None
         self.info = None
