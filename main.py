@@ -46,7 +46,7 @@ class PlayerNumDropDown(DropDown):
 
         :param num_players: number of players
         """
-        player_number_screen = [child for child in self.parent.children[1].children][0]
+        player_number_screen = next(child for child in self.parent.children[1].children)
         player_number_screen.num_players = num_players
         self.dismiss()
 
@@ -128,7 +128,7 @@ class PlayerNumberScreen(Screen):
 
         :param game_mode: 'comp', 'game' or 'solo'.
         """
-        add_comp_player_button = [child for child in self.children if child.id == 'compy'][0]
+        add_comp_player_button = next(child for child in self.children if child.id == 'compy')
         if game_mode == 'comp':
             add_comp_player_button.text = 'COMPUTER FRIEND: YES'
         elif game_mode == 'game':
@@ -140,7 +140,7 @@ class PlayerNumberScreen(Screen):
         :param args: Unused.
         """
         mode = ''
-        name_screen = [screen for screen in self.parent.screens if screen.name == 'name'][0]
+        name_screen = next(screen for screen in self.parent.screens if screen.name == 'name')
         if name_screen.game_mode == 'comp':
             name_screen.game_mode = mode = 'game'
         elif name_screen.game_mode == 'game':
@@ -155,7 +155,7 @@ class PlayerNumberScreen(Screen):
 
     def to_menu_screen(self) -> None:
         """Reset PlayerNameScreen, PlayerNumberScreen and go to MenuScreen."""
-        name_screen = [screen for screen in self.parent.screens if screen.name == 'name'][0]
+        name_screen = next(screen for screen in self.parent.screens if screen.name == 'name')
         name_screen.game_mode = 'game'
         self.num_label.text = 'Players Selected: '
         self.cont.disabled = True
@@ -210,7 +210,7 @@ class PlayerNameScreen(Screen):
 
     def get_num_players(self) -> None:
         """Get number of players from PlayerNumberScreen."""
-        number_screen = [screen for screen in self.parent.screens if screen.name is 'number'][0]
+        number_screen = next(screen for screen in self.parent.screens if screen.name is 'number')
         self.num_players = number_screen.num_players
 
     def add_player(self, focus_input: 'FocusInput', invalid: bool) -> None:
@@ -267,7 +267,7 @@ class PlayerNameScreen(Screen):
 
     def reset_goal_screen(self) -> None:
         """Reset goal_screen variables and labels."""
-        goal_screen = [screen for screen in self.parent.screens if screen.name == 'goal'][0]
+        goal_screen = next(screen for screen in self.parent.screens if screen.name == 'goal')
         goal_screen.turn_limit = 0
         goal_screen.point_goal = 0
         goal_screen.goals.diff.text = 'Difficulty:'
@@ -276,7 +276,7 @@ class PlayerNameScreen(Screen):
 
     def reset_num_screen(self) -> None:
         """Reset number_screen variables, labels, and buttons."""
-        number_screen = [screen for screen in self.parent.screens if screen.name == 'number'][0]
+        number_screen = next(screen for screen in self.parent.screens if screen.name == 'number')
         number_screen.num_label.text = 'Players Selected: '
         number_screen.cont.disabled = True
         number_screen.num_players = 0
@@ -316,7 +316,7 @@ class FriendsButton(Button):
 
     def on_release(self) -> None:
         """Set name_screen.game_mode and schedule move to PlayerNumberScreen."""
-        name_screen = [screen for screen in self.parent.parent.screens if screen.name == 'name'][0]
+        name_screen = next(screen for screen in self.parent.parent.screens if screen.name == 'name')
         name_screen.game_mode = 'game'
         Clock.schedule_once(self.to_num_screen, .2)
 
@@ -338,9 +338,9 @@ class MyOwnSelfButton(Button):
 
     def on_release(self) -> None:
         """Set number of players and schedule move to PlayerNameScreen."""
-        num_screen = [screen for screen in self.parent.parent.screens if screen.name == 'number'][0]
+        num_screen = next(screen for screen in self.parent.parent.screens if screen.name == 'number')
         num_screen.num_players = 1
-        names = [screen for screen in self.parent.parent.screens if screen.name == 'name'][0]
+        names = next(screen for screen in self.parent.parent.screens if screen.name == 'name')
         names.game_mode = 'comp'
         Clock.schedule_once(self.to_name_screen, .2)
 
@@ -363,9 +363,9 @@ class SoloGameButton(Button):
     def on_release(self) -> None:
         """Set number of players, game mode and schedule move to PlayerGoalScreen."""
         screens = self.parent.parent.screens
-        number_screen = [screen for screen in screens if screen.name == 'number'][0]
+        number_screen = next(screen for screen in screens if screen.name == 'number')
         number_screen.num_players = 1
-        name_screen = [screen for screen in screens if screen.name == 'name'][0]
+        name_screen = next(screen for screen in screens if screen.name == 'name')
         name_screen.game_mode = 'solo'
         Clock.schedule_once(self.to_goal_screen, .2)
 
@@ -477,7 +477,7 @@ class GameScreen(Screen):
         else:
             message = f'{winners[0].name.title()} Wins!\n\nWith {winners[0].total_score:,} points!'
 
-        results_screen = [screen for screen in self.parent.screens if screen.name == 'results'][0]
+        results_screen = next(screen for screen in self.parent.screens if screen.name == 'results')
         results_screen.message = message
         results_screen.game_mode = 'game'
 
@@ -696,10 +696,10 @@ class ResultsScreen(Screen):
 
     def play_again(self) -> None:
         """Reset player scores and return to appropriate game screen."""
-        game_screen = [screen for screen in self.parent.screens if screen.name == 'game'][0]
+        game_screen = next(screen for screen in self.parent.screens if screen.name == 'game')
 
         if self.game_mode == 'solo':
-            solo_screen = [screen for screen in self.parent.screens if screen.name == 'solo'][0]
+            solo_screen = next(screen for screen in self.parent.screens if screen.name == 'solo')
             self.reset_player_scores(solo_screen)
             self.reset_solo_screen(solo_screen)
 
@@ -770,7 +770,7 @@ class ResultsScreen(Screen):
 
         :param results_screen: ResultsScreen instance.
         """
-        message = [child for child in results_screen.children if child.id == 'message'][0]
+        message = next(child for child in results_screen.children if child.id == 'message')
         results_screen.remove_widget(message)
 
 
@@ -1186,8 +1186,8 @@ class YouSurePopup(MyPopup):
 
         :param args: Unused.
         """
-        game_screen = [screen for screen in self.parent.children[1].screens if screen.name == 'game'][0]
-        solo_screen = [screen for screen in self.parent.children[1].screens if screen.name == 'solo'][0]
+        game_screen = next(screen for screen in self.parent.children[1].screens if screen.name == 'game')
+        solo_screen = next(screen for screen in self.parent.children[1].screens if screen.name == 'solo')
 
         if len(game_screen.base.list_o_players) > 1:
             game_screen.next_round()
@@ -1523,7 +1523,7 @@ class ReallyQuit(MyPopup):
         """
         self.dismiss()
         screen_manager = self.parent.children[1]
-        results = [screen for screen in screen_manager.screens if screen.name == 'results'][0]
+        results = next(screen for screen in screen_manager.screens if screen.name == 'results')
 
         for screen in screen_manager.screens:
             if screen.name == 'number':
@@ -1579,7 +1579,7 @@ class Base(FloatLayout):
 
         :return: active_game ObjectProperty.
         """
-        name_screen = [screen for screen in self.parent.parent.screens if screen.name == 'name'][0]
+        name_screen = next(screen for screen in self.parent.parent.screens if screen.name == 'name')
         self.active_game = name_screen.active_game
         return self.active_game
 
@@ -1884,7 +1884,7 @@ class SoloGoalScreen(Screen):
 
     def to_menu_screen(self) -> None:
         """Reset PlayerNumberScreen stuff and go to menu screen."""
-        number_screen = [screen for screen in self.parent.screens if screen.name == 'number'][0]
+        number_screen = next(screen for screen in self.parent.screens if screen.name == 'number')
         number_screen.num_players = 0
         number_screen.num_label.text = 'Players Selected: '
         self.goals.diff.text = 'Difficulty:'
@@ -1919,7 +1919,7 @@ class SoloGameScreen(Screen):
         self.base.get_active_game()
         self.base.get_active_game_players()
 
-        goal_screen = [screen for screen in self.parent.screens if screen.name == 'goal'][0]
+        goal_screen = next(screen for screen in self.parent.screens if screen.name == 'goal')
         self.point_goal = goal_screen.point_goal
         self.turn_limit = goal_screen.turn_limit
 
@@ -1964,7 +1964,7 @@ class SoloGameScreen(Screen):
                 message = f'Oh no, {self.base.current_player.name.title()}!\n\n' \
                     f'You\'re out of turns\n\nand only got {self.base.current_player.total_score:,} points.'
 
-            results_screen = [screen for screen in self.parent.screens if screen.name == 'results'][0]
+            results_screen = next(screen for screen in self.parent.screens if screen.name == 'results')
             results_screen.message = message
             results_screen.game_mode = 'solo'
             Clock.schedule_once(self.results_screen, .5)
