@@ -479,8 +479,9 @@ class GameScreen(Screen):
 
         results_screen = [screen for screen in self.parent.screens if screen.name == 'results'][0]
         results_screen.message = message
+        results_screen.game_mode = 'game'
 
-        self.results_screen()
+        Clock.schedule_once(self.to_results_screen, .5)
 
     def continue_overlord_turn(self) -> None:
         """See if there are any keepers and keep them, else end the turn."""
@@ -495,8 +496,8 @@ class GameScreen(Screen):
             # delay continuing the turn until all dice animations are complete.
             Clock.schedule_once(self.overlord_status_check, float(len(scoring_dice)))
             for i, die in enumerate(scoring_dice):
-                # delay first animation by .75sec..
-                Clock.schedule_once(die.add_to_keepers, float(i * .85 + .75))
+                # delay first animation by .8sec.
+                Clock.schedule_once(die.add_to_keepers, float(i * .85 + .8))
 
     def overlord_status_check(self, *args: list) -> None:
         """Determine if comp_player should roll again.
@@ -562,8 +563,11 @@ class GameScreen(Screen):
         self.base.buttons.end_turn.disabled = True
         self.base.buttons.end_turn.color = [1, 1, 1, .3]
 
-    def results_screen(self) -> None:
-        """Go to ResultsScreen."""
+    def to_results_screen(self, *args: list) -> None:
+        """Go to ResultsScreen.
+
+        :param args: Unused.
+        """
         self.parent.current = 'results'
 
     def animate_indicator(self) -> None:
@@ -638,6 +642,7 @@ class ResultsScreen(Screen):
     """
 
     message = StringProperty()
+    game_mode = StringProperty()
 
     def __init__(self, **kwargs) -> None:
         super(ResultsScreen, self).__init__(**kwargs)
@@ -656,7 +661,7 @@ class ResultsScreen(Screen):
                               size_hint=(.5, .5),
                               pos_hint={'x': .25, 'y': .35}))
 
-    def play_again(self) -> None:
+    def to_main_menu(self) -> None:
         """Iterate through screens calling reset method for each screen."""
         for screen in self.parent.screens:
             if screen.name == 'number':
@@ -678,6 +683,32 @@ class ResultsScreen(Screen):
                 self.reset_results_screen(screen)
 
         self.parent.current = 'menu'
+
+    def reset_player_scores(self, screen: Screen) -> None:
+        """Set all scores to zero.
+
+        :param screen: A game screen.
+        """
+        for player in screen.base.active_game.player_list:
+            player.total_score = 0
+            player.round_score = 0
+            player.basket_score = 0
+
+    def play_again(self) -> None:
+        """Reset player scores and return to appropriate game screen."""
+        game_screen = [screen for screen in self.parent.screens if screen.name == 'game'][0]
+
+        if self.game_mode == 'solo':
+            solo_screen = [screen for screen in self.parent.screens if screen.name == 'solo'][0]
+            self.reset_player_scores(solo_screen)
+            self.reset_solo_screen(solo_screen)
+
+        else:
+            self.reset_player_scores(game_screen)
+
+        self.reset_game_screen(game_screen)
+        self.parent.current = self.game_mode
+        self.reset_results_screen(self)
 
     def reset_num_screen(self, num_screen: Screen) -> None:
         """Reset PlayerNumberScreen labels and button.
@@ -741,10 +772,6 @@ class ResultsScreen(Screen):
         """
         message = [child for child in results_screen.children if child.id == 'message'][0]
         results_screen.remove_widget(message)
-
-    def exit(self) -> None:
-        """Close the app."""
-        self.parent.parent.close()
 
 
 class DieScatter(Scatter):
@@ -1002,6 +1029,7 @@ class InformationStation(FloatLayout):
 
             lil_box.add_widget(Label(id='name',
                                      text=player.name.title(),
+                                     font_size=60,
                                      halign='left',
                                      size_hint=(.6, 1),
                                      pos_hint={'x': .025, 'y': 0},
@@ -1009,6 +1037,7 @@ class InformationStation(FloatLayout):
                                      shorten_from='right'))
             total = Label(id='total',
                           text=str(player.total_score),
+                          font_size=60,
                           size_hint=(.375, 1),
                           pos_hint={'x': .525, 'y': 0})
             lil_box.add_widget(total)
@@ -1111,7 +1140,7 @@ class RulesPopup(MyPopup):
                        font_size=35,
                        halign='left',
                        size_hint=(1, .6),
-                       pos_hint={'x': 0, 'y': .1})
+                       pos_hint={'x': 0, 'y': .2})
         container = FloatLayout()
         container.add_widget(label2)
         container.add_widget(label)
@@ -1134,11 +1163,13 @@ class YouSurePopup(MyPopup):
         self.title = 'Are You Sure?!'
 
         label = Label(text='You still have points on the board!',
+                      font_size=65,
                       halign='center',
                       pos_hint={'x': 0, 'y': .225})
 
         btn = Button(text='MEH, I DON\'T WANT THOSE.',
                      size_hint=(.6, .4),
+                     font_size=75,
                      pos_hint={'x': .2, 'y': .1},
                      background_normal='',
                      background_color=rgba(colors['prime dark']))
@@ -1197,10 +1228,12 @@ class ReallyExit(MyPopup):
         self.title = 'So soon?'
 
         label = Label(text='Are you sure you want to exit the app?',
+                      font_size=65,
                       halign='center',
                       pos_hint={'x': 0, 'y': .3})
 
         yes_go = Button(text='Exit',
+                        font_size=75,
                         size_hint=(.4, .4),
                         pos_hint={'x': .55, 'y': .1},
                         background_normal='',
@@ -1208,6 +1241,7 @@ class ReallyExit(MyPopup):
         yes_go.bind(on_release=self.quit)
 
         no_stay = Button(text='Stay',
+                         font_size=75,
                          size_hint=(.4, .4),
                          pos_hint={'x': .05, 'y': .1},
                          background_normal='',
@@ -1249,10 +1283,11 @@ class SixKeepersPopup(MyPopup):
         self.title = 'Congratulations!'
 
         label = Label(text='You got six keepers! Roll \'em all again!',
+                      font_size=65,
                       halign='center')
 
         self.content = label
-        self.size_hint = (.45, .3)
+        self.size_hint = (.6, .35)
 
 
 class ThresholdNotMet(MyPopup):
@@ -1269,6 +1304,7 @@ class ThresholdNotMet(MyPopup):
         self.title = 'Hold Up!'
 
         label = Label(text='You haven\'t earned 500 points in one turn yet.\n\n Keep rolling!',
+                      font_size=65,
                       halign='center')
 
         self.content = label
@@ -1288,10 +1324,11 @@ class FarklePopup(MyPopup):
         self.title = 'Oh No!'
 
         label = Label(text='You didn\'t get any keepers! Your turn is over.\n\n:(',
+                      font_size=65,
                       halign='center')
 
         self.content = label
-        self.size_hint = (.5, .4)
+        self.size_hint = (.6, .5)
 
 
 class NonKeeperKept(MyPopup):
@@ -1312,6 +1349,7 @@ class NonKeeperKept(MyPopup):
 
         label = Label(text='You have non-scoring dice in the scoring area.'
                            '\n\nRemove non-scoring dice to turn line green and continue',
+                      font_size=65,
                       halign='center',
                       pos_hint={'x': 0, 'y': .25})
         btn = RulesButton(size_hint=(.5, .3),
@@ -1455,7 +1493,7 @@ class ReallyQuit(MyPopup):
                         pos_hint={'x': .55, 'y': .1},
                         background_normal='',
                         background_color=rgba(colors['prime dark']))
-        yes_go.bind(on_release=self.quit)
+        yes_go.bind(on_release=self.leave)
 
         no_stay = Button(text='Stay',
                          font_size=75,
@@ -1478,17 +1516,14 @@ class ReallyQuit(MyPopup):
         """
         self.dismiss()
 
-    def quit(self, *args: list) -> None:
+    def leave(self, *args: list) -> None:
         """Close popup, reset screens and return to MenuScreen.
 
         :param args: Unused.
         """
         self.dismiss()
-        results = [screen for screen in self.parent.children[1].screens if screen.name == 'results'][0]
         screen_manager = self.parent.children[1]
-        for screen in screen_manager.screens:
-            if screen.name == 'results':
-                results = screen
+        results = [screen for screen in screen_manager.screens if screen.name == 'results'][0]
 
         for screen in screen_manager.screens:
             if screen.name == 'number':
@@ -1504,7 +1539,7 @@ class ReallyQuit(MyPopup):
                 results.reset_goal_screen(screen)
 
             if screen.name == 'solo':
-                results.reset_goal_screen(screen)
+                results.reset_solo_screen(screen)
 
         screen_manager.current = 'menu'
 
@@ -1867,7 +1902,6 @@ class SoloGameScreen(Screen):
     """
 
     base = ObjectProperty()
-    comp_player = StringProperty()
     turn = NumericProperty(0)
     point_goal = NumericProperty()
     turn_limit = NumericProperty()
@@ -1929,14 +1963,18 @@ class SoloGameScreen(Screen):
             else:
                 message = f'Oh no, {self.base.current_player.name.title()}!\n\n' \
                     f'You\'re out of turns\n\nand only got {self.base.current_player.total_score:,} points.'
-            for screen in self.parent.screens:
-                if screen.name == 'results':
-                    screen.message = message
-            self.results_screen()
+
+            results_screen = [screen for screen in self.parent.screens if screen.name == 'results'][0]
+            results_screen.message = message
+            results_screen.game_mode = 'solo'
+            Clock.schedule_once(self.results_screen, .5)
         self.turn += 1
 
-    def results_screen(self) -> None:
-        """Set current screen to ResultsScreen."""
+    def results_screen(self, *args: list) -> None:
+        """Set current screen to ResultsScreen.
+
+        :param args: Unused.
+        """
         self.parent.current = 'results'
 
 

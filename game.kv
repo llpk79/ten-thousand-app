@@ -119,14 +119,15 @@ ScreenManager:
         Button:
             text: 'PLAY AGAIN'
             font_size: 75
-            on_press: root.play_again()
             background_normal: ''
             background_color: rgba(colors['prime dark'])
-        Exit:
-            text: 'EXIT'
+            on_release: root.play_again()
+        Button:
+            text: 'MAIN MENU'
             font_size: 75
-            size_hint: 1, 1
-            pos_hint: {'x': 0, 'y': 0}
+            background_normal: ''
+            background_color: rgba(colors['prime dark'])
+            on_press: root.to_main_menu()
 
 <PlayerNameScreen>:
     name: 'name'
@@ -186,8 +187,8 @@ ScreenManager:
         pos_hint: {'x': self.x, 'y': -0.425}
     KeeperBox:
         id: keeper_box
-        pos_hint: {'x': 0, 'y': 0.125}
-        size_hint: 1, 0.4
+        pos_hint: {'x': .05, 'y': 0.125}
+        size_hint: .95, 0.4
         padding: [5]
         spacing: 5
         DieHolder:
@@ -219,20 +220,24 @@ ScreenManager:
         shorten_from: 'right'
         halign: 'center'
         bold: True
+        font_size: 60
     PlayerArea:
         id: round
         size_hint: .2, 1
         halign: 'left'
         text: 'Round: 0'
+        font_size: 60
     PlayerArea:
         id: total
         size_hint: .2, 1
         halign: 'left'
         text: 'Total: 0'
+        font_size: 60
     PlayerArea:
         id: total_plus
         size_hint: .325, 1
         halign: 'left'
+        font_size: 60
         text: 'Round + Total: 0'
 
 <InformationStation>:
