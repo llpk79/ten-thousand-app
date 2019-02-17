@@ -30,33 +30,86 @@ from media import sounds, die_images
 from random import randint, uniform
 
 
-class PlayerNumDropDown(DropDown):
+class MenuScreen(Screen):
 
-    """A drop down menu for selecting number of players.
+    """The main menu screen."""
 
-    Inherits from DropDown.
-    Overrides select method.
+    def __init__(self, **kwargs) -> None:
+        super(MenuScreen, self).__init__(**kwargs)
+
+
+class FriendsButton(Button):
+
+    """Button for choosing multiplayer game mode.
+
+    Inherits from Button.
+    Overrides Button.on_release.
     """
 
-    def __init__(self, **kwargs):
-        super(PlayerNumDropDown, self).__init__(**kwargs)
+    def __init__(self, **kwargs) -> None:
+        super(FriendsButton, self).__init__(**kwargs)
 
-    def select(self, num_players: int) -> None:
-        """Update PlayerNumberScreen.num_players and close popup.
+    def on_release(self) -> None:
+        """Set name_screen.game_mode and schedule move to PlayerNumberScreen."""
+        name_screen = next(screen for screen in self.parent.parent.screens if screen.name == 'name')
+        name_screen.game_mode = 'game'
+        Clock.schedule_once(self.to_num_screen, .2)
 
-        :param num_players: number of players
+    def to_num_screen(self, *args: list) -> None:
+        """Set current screen to PlayerNumberScreen."""
+        self.parent.parent.current = 'number'
+
+
+class MyOwnSelfButton(Button):
+
+    """Button to select single player v computer game mode.
+
+    Inherits from Button.
+    Overrides Button.on_release.
+    """
+
+    def __init__(self, **kwargs) -> None:
+        super(MyOwnSelfButton, self).__init__(**kwargs)
+
+    def on_release(self) -> None:
+        """Set number of players and schedule move to PlayerNameScreen."""
+        num_screen = next(screen for screen in self.parent.parent.screens if screen.name == 'number')
+        num_screen.num_players = 1
+        names = next(screen for screen in self.parent.parent.screens if screen.name == 'name')
+        names.game_mode = 'comp'
+        Clock.schedule_once(self.to_name_screen, .2)
+
+    def to_name_screen(self, *args: list) -> None:
+        """Set current screen to PlayerNameScreen."""
+        self.parent.parent.current = 'name'
+
+
+class SoloGameButton(Button):
+
+    """Set game mode to challenge mode.
+
+    Inherits from Button.
+    Overrides Button.on_release.
+    """
+
+    def __init__(self, **kwargs) -> None:
+        super(SoloGameButton, self).__init__(**kwargs)
+
+    def on_release(self) -> None:
+        """Set number of players, game mode and schedule move to PlayerGoalScreen."""
+        screens = self.parent.parent.screens
+        number_screen = next(screen for screen in screens if screen.name == 'number')
+        number_screen.num_players = 1
+        name_screen = next(screen for screen in screens if screen.name == 'name')
+        name_screen.game_mode = 'solo'
+        Clock.schedule_once(self.to_goal_screen, .2)
+
+    def to_goal_screen(self, *args: list) -> None:
+        """Set current screen to PlayerGoalScreen.
+
+        :param args: Unused.
         """
-        player_number_screen = next(child for child in self.parent.children[1].children)
-        player_number_screen.num_players = num_players
-        self.dismiss()
-
-
-class BackButton(Button):
-
-    """Button for returning to previous screen."""
-
-    def __init__(self, **kwargs):
-        super(BackButton, self).__init__(**kwargs)
+        self.parent.parent.current = 'goal'
 
 
 class PlayerNumberScreen(Screen):
@@ -295,88 +348,6 @@ class PlayerNameScreen(Screen):
         self.clear_widgets(self.children[:-2])
 
 
-class MenuScreen(Screen):
-
-    """The main menu screen."""
-
-    def __init__(self, **kwargs) -> None:
-        super(MenuScreen, self).__init__(**kwargs)
-
-
-class FriendsButton(Button):
-
-    """Button for choosing multiplayer game mode.
-
-    Inherits from Button.
-    Overrides Button.on_release.
-    """
-
-    def __init__(self, **kwargs) -> None:
-        super(FriendsButton, self).__init__(**kwargs)
-
-    def on_release(self) -> None:
-        """Set name_screen.game_mode and schedule move to PlayerNumberScreen."""
-        name_screen = next(screen for screen in self.parent.parent.screens if screen.name == 'name')
-        name_screen.game_mode = 'game'
-        Clock.schedule_once(self.to_num_screen, .2)
-
-    def to_num_screen(self, *args: list) -> None:
-        """Set current screen to PlayerNumberScreen."""
-        self.parent.parent.current = 'number'
-
-
-class MyOwnSelfButton(Button):
-
-    """Button to select single player v computer game mode.
-
-    Inherits from Button.
-    Overrides Button.on_release.
-    """
-
-    def __init__(self, **kwargs) -> None:
-        super(MyOwnSelfButton, self).__init__(**kwargs)
-
-    def on_release(self) -> None:
-        """Set number of players and schedule move to PlayerNameScreen."""
-        num_screen = next(screen for screen in self.parent.parent.screens if screen.name == 'number')
-        num_screen.num_players = 1
-        names = next(screen for screen in self.parent.parent.screens if screen.name == 'name')
-        names.game_mode = 'comp'
-        Clock.schedule_once(self.to_name_screen, .2)
-
-    def to_name_screen(self, *args: list) -> None:
-        """Set current screen to PlayerNameScreen."""
-        self.parent.parent.current = 'name'
-
-
-class SoloGameButton(Button):
-
-    """Set game mode to challenge mode.
-
-    Inherits from Button.
-    Overrides Button.on_release.
-    """
-
-    def __init__(self, **kwargs) -> None:
-        super(SoloGameButton, self).__init__(**kwargs)
-
-    def on_release(self) -> None:
-        """Set number of players, game mode and schedule move to PlayerGoalScreen."""
-        screens = self.parent.parent.screens
-        number_screen = next(screen for screen in screens if screen.name == 'number')
-        number_screen.num_players = 1
-        name_screen = next(screen for screen in screens if screen.name == 'name')
-        name_screen.game_mode = 'solo'
-        Clock.schedule_once(self.to_goal_screen, .2)
-
-    def to_goal_screen(self, *args: list) -> None:
-        """Set current screen to PlayerGoalScreen.
-
-        :param args: Unused.
-        """
-        self.parent.parent.current = 'goal'
-
-
 class PlayerScore(BoxLayout):
 
     """Empty box to hold PlayerScore(s)."""
@@ -536,7 +507,7 @@ class GameScreen(Screen):
         # comp_player has 500 or more points and three or fewer dice to roll. Pretty good, stop.
         elif (self.base.current_player.round_score + self.base.current_player.basket_score >= 500 and
                 len(self.base.die_basket.old_keepers) + len(self.base.die_basket.keepers) >= 3):
-            Clock.schedule_once(self.base.buttons.end_turn.on_press, .1)
+            Clock.schedule_once(self.base.buttons.end_turn.on_press, 1.)
             return
 
         # whelp, I suppose we'd better roll 'em.
@@ -1049,59 +1020,6 @@ class InformationStation(FloatLayout):
         self.add_widget(indicator)
 
 
-class GameButtonRow(BoxLayout):
-
-    """Box for holding game operation buttons. Inherits from Box Layout."""
-
-    roll = ObjectProperty()
-    end_turn = ObjectProperty()
-    keep = ObjectProperty()
-
-    def __init__(self, **kwargs) -> None:
-        super(GameButtonRow, self).__init__(**kwargs)
-
-
-class RulesButton(Button):
-
-    """Launch RulesPopup. Inherits from Button."""
-
-    def __init__(self, **kwargs) -> None:
-        """Add RulesPopup as attribute popup.
-
-        :param kwargs: Pass to super.
-        """
-        super(RulesButton, self).__init__(**kwargs)
-
-        self.popup = RulesPopup()
-
-    def on_press(self) -> None:
-        """Open RulesPopup."""
-        self.popup.open()
-
-
-class KeepAll(Button):
-
-    """Button for adding all dice to the keeper_box.
-
-    Inherits from Button.
-    Overrides on_press.
-    """
-
-    def __init__(self, **kwargs) -> None:
-        super(KeepAll, self).__init__(**kwargs)
-
-    def on_press(self) -> None:
-        """Add all dice not in keeper_box to keepers."""
-        # do nothing if it's comp_player's turn.
-        if self.parent.parent.current_player.comp_player:
-            return
-        dice = self.parent.parent.dice.children
-        for die in dice:
-            if (die not in self.parent.parent.die_basket.old_keepers and
-                    die not in self.parent.parent.die_basket.keepers):
-                die.add_to_keepers()
-
-
 class MyPopup(Popup):
 
     """Template for popups, inherits from Popup."""
@@ -1197,23 +1115,6 @@ class YouSurePopup(MyPopup):
         self.dismiss()
 
 
-class Exit(Button):
-
-    """Call ReallyExit popup to confirm user intention.
-
-    Inherit from Button.
-    Override on_release.
-    """
-
-    def __init__(self, **kwargs) -> None:
-        super(Exit, self).__init__(**kwargs)
-
-    def on_release(self) -> None:
-        """Open confirmation popup."""
-        popup = ReallyExit()
-        popup.open()
-
-
 class ReallyExit(MyPopup):
 
     """Confirm user intention to leave app. Inherits from MyPopup."""
@@ -1267,6 +1168,79 @@ class ReallyExit(MyPopup):
         :param args: Unused.
         """
         self.parent.close()
+
+
+class ReallyQuit(MyPopup):
+
+    """Confirm user intention to quit the game. Inherits from MyPopup."""
+
+    def __init__(self, **kwargs) -> None:
+        """Set title and content. Add buttons for staying in-game and quitting game.
+
+        :param kwargs: Passed to super.
+        """
+        super(ReallyQuit, self).__init__(**kwargs)
+
+        self.title = 'You\'ve got a good thing going here.'
+
+        label = Label(text='Are you sure you want quit your game?',
+                      halign='center',
+                      pos_hint={'x': 0, 'y': .3})
+        yes_go = Button(text='Quit',
+                        font_size=75,
+                        size_hint=(.4, .4),
+                        pos_hint={'x': .55, 'y': .1},
+                        background_normal='',
+                        background_color=rgba(colors['prime dark']))
+        yes_go.bind(on_release=self.leave)
+
+        no_stay = Button(text='Stay',
+                         font_size=75,
+                         size_hint=(.4, .4),
+                         pos_hint={'x': .05, 'y': .1},
+                         background_normal='',
+                         background_color=rgba(colors['prime dark']))
+        no_stay.bind(on_release=self.stay)
+
+        base = FloatLayout()
+        base.add_widget(label)
+        base.add_widget(yes_go)
+        base.add_widget(no_stay)
+        self.content = base
+
+    def stay(self, *args: list) -> None:
+        """Close the popup.
+
+        :param args: Unused.
+        """
+        self.dismiss()
+
+    def leave(self, *args: list) -> None:
+        """Close popup, reset screens and return to MenuScreen.
+
+        :param args: Unused.
+        """
+        self.dismiss()
+        screen_manager = self.parent.children[1]
+        results = next(screen for screen in screen_manager.screens if screen.name == 'results')
+
+        for screen in screen_manager.screens:
+            if screen.name == 'number':
+                results.reset_num_screen(screen)
+
+            if screen.name == 'name':
+                results.reset_name_screen(screen)
+
+            if screen.name == 'game':
+                results.reset_game_screen(screen)
+
+            if screen.name == 'goal':
+                results.reset_goal_screen(screen)
+
+            if screen.name == 'solo':
+                results.reset_solo_screen(screen)
+
+        screen_manager.current = 'menu'
 
 
 class SixKeepersPopup(MyPopup):
@@ -1361,6 +1335,76 @@ class NonKeeperKept(MyPopup):
 
         self.content = layout
         self.size_hint = (.7, .6)
+
+
+class GameButtonRow(BoxLayout):
+
+    """Box for holding game operation buttons. Inherits from Box Layout."""
+
+    roll = ObjectProperty()
+    end_turn = ObjectProperty()
+    keep = ObjectProperty()
+
+    def __init__(self, **kwargs) -> None:
+        super(GameButtonRow, self).__init__(**kwargs)
+
+
+class RulesButton(Button):
+
+    """Launch RulesPopup. Inherits from Button."""
+
+    def __init__(self, **kwargs) -> None:
+        """Add RulesPopup as attribute popup.
+
+        :param kwargs: Pass to super.
+        """
+        super(RulesButton, self).__init__(**kwargs)
+
+        self.popup = RulesPopup()
+
+    def on_press(self) -> None:
+        """Open RulesPopup."""
+        self.popup.open()
+
+
+class KeepAll(Button):
+
+    """Button for adding all dice to the keeper_box.
+
+    Inherits from Button.
+    Overrides on_press.
+    """
+
+    def __init__(self, **kwargs) -> None:
+        super(KeepAll, self).__init__(**kwargs)
+
+    def on_press(self) -> None:
+        """Add all dice not in keeper_box to keepers."""
+        # do nothing if it's comp_player's turn.
+        if self.parent.parent.current_player.comp_player:
+            return
+        dice = self.parent.parent.dice.children
+        for die in dice:
+            if (die not in self.parent.parent.die_basket.old_keepers and
+                    die not in self.parent.parent.die_basket.keepers):
+                die.add_to_keepers()
+
+
+class Exit(Button):
+
+    """Call ReallyExit popup to confirm user intention.
+
+    Inherit from Button.
+    Override on_release.
+    """
+
+    def __init__(self, **kwargs) -> None:
+        super(Exit, self).__init__(**kwargs)
+
+    def on_release(self) -> None:
+        """Open confirmation popup."""
+        popup = ReallyExit()
+        popup.open()
 
 
 class EndTurn(Button):
@@ -1471,79 +1515,6 @@ class Roll(Button):
                 self.text = 'RISK \'N ROLL!'
 
 
-class ReallyQuit(MyPopup):
-
-    """Confirm user intention to quit the game. Inherits from MyPopup."""
-
-    def __init__(self, **kwargs) -> None:
-        """Set title and content. Add buttons for staying in-game and quitting game.
-
-        :param kwargs: Passed to super.
-        """
-        super(ReallyQuit, self).__init__(**kwargs)
-
-        self.title = 'You\'ve got a good thing going here.'
-
-        label = Label(text='Are you sure you want quit your game?',
-                      halign='center',
-                      pos_hint={'x': 0, 'y': .3})
-        yes_go = Button(text='Quit',
-                        font_size=75,
-                        size_hint=(.4, .4),
-                        pos_hint={'x': .55, 'y': .1},
-                        background_normal='',
-                        background_color=rgba(colors['prime dark']))
-        yes_go.bind(on_release=self.leave)
-
-        no_stay = Button(text='Stay',
-                         font_size=75,
-                         size_hint=(.4, .4),
-                         pos_hint={'x': .05, 'y': .1},
-                         background_normal='',
-                         background_color=rgba(colors['prime dark']))
-        no_stay.bind(on_release=self.stay)
-
-        base = FloatLayout()
-        base.add_widget(label)
-        base.add_widget(yes_go)
-        base.add_widget(no_stay)
-        self.content = base
-
-    def stay(self, *args: list) -> None:
-        """Close the popup.
-
-        :param args: Unused.
-        """
-        self.dismiss()
-
-    def leave(self, *args: list) -> None:
-        """Close popup, reset screens and return to MenuScreen.
-
-        :param args: Unused.
-        """
-        self.dismiss()
-        screen_manager = self.parent.children[1]
-        results = next(screen for screen in screen_manager.screens if screen.name == 'results')
-
-        for screen in screen_manager.screens:
-            if screen.name == 'number':
-                results.reset_num_screen(screen)
-
-            if screen.name == 'name':
-                results.reset_name_screen(screen)
-
-            if screen.name == 'game':
-                results.reset_game_screen(screen)
-
-            if screen.name == 'goal':
-                results.reset_goal_screen(screen)
-
-            if screen.name == 'solo':
-                results.reset_solo_screen(screen)
-
-        screen_manager.current = 'menu'
-
-
 class Quit(Button):
 
     """Button to quit game."""
@@ -1555,6 +1526,14 @@ class Quit(Button):
         """Confirm user intention to quit with popup."""
         popup = ReallyQuit()
         popup.open()
+
+
+class BackButton(Button):
+
+    """Button for returning to previous screen."""
+
+    def __init__(self, **kwargs):
+        super(BackButton, self).__init__(**kwargs)
 
 
 class Base(FloatLayout):
@@ -1734,12 +1713,25 @@ class DieBasket(FloatLayout):
             roll_button.update_color()
 
 
-class SoloPLayerScore(BoxLayout):
+class PlayerNumDropDown(DropDown):
 
-    """Container for single player score information."""
+    """A drop down menu for selecting number of players.
 
-    def __init__(self, **kwargs) -> None:
-        super(SoloPLayerScore, self).__init__(**kwargs)
+    Inherits from DropDown.
+    Overrides select method.
+    """
+
+    def __init__(self, **kwargs):
+        super(PlayerNumDropDown, self).__init__(**kwargs)
+
+    def select(self, num_players: int) -> None:
+        """Update PlayerNumberScreen.num_players and close popup.
+
+        :param num_players: number of players
+        """
+        player_number_screen = next(child for child in self.parent.children[1].children)
+        player_number_screen.num_players = num_players
+        self.dismiss()
 
 
 class PointGoal(DropDown):
@@ -1891,6 +1883,13 @@ class SoloGoalScreen(Screen):
         self.goals.points.text = 'Points goal:'
         self.goals.turns.text = 'Turn limit:'
         self.parent.current = 'menu'
+
+
+class SoloPLayerScore(BoxLayout):
+    """Container for single player score information."""
+
+    def __init__(self, **kwargs) -> None:
+        super(SoloPLayerScore, self).__init__(**kwargs)
 
 
 class SoloGameScreen(Screen):
