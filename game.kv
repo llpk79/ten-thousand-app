@@ -45,7 +45,7 @@ ScreenManager:
 
 <MyOwnSelfButton>:
 
-<BackButton>:
+<BackButton@Button>:
     text: 'BACK'
     pos_hint: {'x': .05, 'y': .05}
     size_hint: (.1, .075)
@@ -127,7 +127,7 @@ ScreenManager:
             font_size: 75
             background_normal: ''
             background_color: rgba(colors['prime dark'])
-            on_press: root.to_main_menu()
+            on_release: root.to_main_menu()
 
 <PlayerNameScreen>:
     name: 'name'
@@ -166,9 +166,9 @@ ScreenManager:
     BackButton:
         on_release: root.to_menu_screen()
 
-<DieHolder>:
+<DieHolder@Widget>:
 
-<KeeperBox>:
+<KeeperBox@BoxLayout>:
 
 <DieBasket>:
     keeper_box: keeper_box

@@ -34,8 +34,7 @@ class MenuScreen(Screen):
 
     """The main menu screen."""
 
-    def __init__(self, **kwargs) -> None:
-        super(MenuScreen, self).__init__(**kwargs)
+    pass
 
 
 class FriendsButton(Button):
@@ -45,9 +44,6 @@ class FriendsButton(Button):
     Inherits from Button.
     Overrides Button.on_release.
     """
-
-    def __init__(self, **kwargs) -> None:
-        super(FriendsButton, self).__init__(**kwargs)
 
     def on_release(self) -> None:
         """Set name_screen.game_mode and schedule move to PlayerNumberScreen."""
@@ -67,9 +63,6 @@ class MyOwnSelfButton(Button):
     Inherits from Button.
     Overrides Button.on_release.
     """
-
-    def __init__(self, **kwargs) -> None:
-        super(MyOwnSelfButton, self).__init__(**kwargs)
 
     def on_release(self) -> None:
         """Set number of players and schedule move to PlayerNameScreen."""
@@ -91,9 +84,6 @@ class SoloGameButton(Button):
     Inherits from Button.
     Overrides Button.on_release.
     """
-
-    def __init__(self, **kwargs) -> None:
-        super(SoloGameButton, self).__init__(**kwargs)
 
     def on_release(self) -> None:
         """Set number of players, game mode and schedule move to PlayerGoalScreen."""
@@ -121,19 +111,6 @@ class PlayerNumberScreen(Screen):
     """
 
     num_players = NumericProperty()
-
-    def __init__(self, **kwargs) -> None:
-        super(PlayerNumberScreen, self).__init__(**kwargs)
-
-    def on_num_players(self, screen: Screen, num_players: int) -> None:
-        """Check num_players is non_zero -> set self.num_players, call set_label
-
-        :param screen: the current Screen.
-        :param num_players: number of players.
-        """
-        if num_players:
-            self.num_players = num_players
-            self.set_label()
 
     def on_enter(self) -> None:
         """Set up screen with widgets for setting number of players and optional comp player."""
@@ -175,6 +152,16 @@ class PlayerNumberScreen(Screen):
                                  background_color=rgba(colors['prime dark']),
                                  on_release=self.set_game_mode)
         self.add_widget(add_comp_player)
+
+    def on_num_players(self, screen: Screen, num_players: int) -> None:
+        """Check num_players is non_zero -> set self.num_players, call set_label
+
+        :param screen: the current Screen.
+        :param num_players: number of players.
+        """
+        if num_players:
+            self.num_players = num_players
+            self.set_label()
 
     def set_btn_text(self, game_mode: str) -> None:
         """Set text on add_comp_player button.
@@ -258,8 +245,32 @@ class PlayerNameScreen(Screen):
     num_players = NumericProperty()
     game_mode = StringProperty()
 
-    def __init__(self, **kwargs) -> None:
-        super(PlayerNameScreen, self).__init__(**kwargs)
+    def on_enter(self) -> None:
+        """Set up screen with widgets for entering player names."""
+        self.get_num_players()
+        if self.game_mode == 'comp':
+            self.num_players += 1
+
+        # Place a label and input_name text-box for each player.
+        for i in range(1, self.num_players + 1):
+            if self.game_mode == 'comp' and i == self.num_players:
+                text = 'Enter Computer Player Name:'
+                # Position above the keyboard and move upward slightly with more players. Place subsequent rows below.
+                position = {'x': .1, 'y': .715 + (self.num_players / 30) - (i * .135)}
+            else:
+                text = f'Enter Player {i}\'s name:'
+                position = {'x': .15, 'y': .715 + (self.num_players / 30) - (i * .135)}
+
+            label = Label(text=text,
+                          font_size=60,
+                          color=rgba(colors['text']),
+                          pos_hint=position,
+                          size_hint=(.25, .1),
+                          id=str(i))
+            self.add_widget(label)
+
+            input_name = (FocusInput(pos_hint={'x': .475, 'y': .715 + (self.num_players / 30) - (i * .135)}))
+            self.add_widget(input_name)
 
     def get_num_players(self) -> None:
         """Get number of players from PlayerNumberScreen."""
@@ -290,33 +301,6 @@ class PlayerNameScreen(Screen):
             self.parent.current = 'game'
         elif self.game_mode == 'solo':
             self.parent.current = 'solo'
-
-    def on_enter(self) -> None:
-        """Set up screen with widgets for entering player names."""
-        self.get_num_players()
-        if self.game_mode == 'comp':
-            self.num_players += 1
-
-        # Place a label and input_name text-box for each player.
-        for i in range(1, self.num_players + 1):
-            if self.game_mode == 'comp' and i == self.num_players:
-                text = 'Enter Computer Player Name:'
-                # Position above the keyboard and move upward slightly with more players. Place subsequent rows below.
-                position = {'x': .1, 'y': .715 + (self.num_players / 30) - (i * .135)}
-            else:
-                text = f'Enter Player {i}\'s name:'
-                position = {'x': .15, 'y': .715 + (self.num_players / 30) - (i * .135)}
-
-            label = Label(text=text,
-                          font_size=60,
-                          color=rgba(colors['text']),
-                          pos_hint=position,
-                          size_hint=(.25, .1),
-                          id=str(i))
-            self.add_widget(label)
-
-            input_name = (FocusInput(pos_hint={'x': .475, 'y': .715 + (self.num_players / 30) - (i * .135)}))
-            self.add_widget(input_name)
 
     def reset_goal_screen(self) -> None:
         """Reset goal_screen variables and labels."""
@@ -352,16 +336,14 @@ class PlayerScore(BoxLayout):
 
     """Empty box to hold PlayerScore(s)."""
 
-    def __init__(self, **kwargs) -> None:
-        super(PlayerScore, self).__init__(**kwargs)
+    pass
 
 
 class ScoreArea(BoxLayout):
 
     """Empty box to hold player score labels."""
 
-    def __init__(self, **kwargs) -> None:
-        super(ScoreArea, self).__init__(**kwargs)
+    pass
 
 
 class GameScreen(Screen):
@@ -373,9 +355,6 @@ class GameScreen(Screen):
     """
 
     base = ObjectProperty()
-
-    def __init__(self, **kwargs) -> None:
-        super(GameScreen, self).__init__(**kwargs)
 
     def on_enter(self, *args: list) -> None:
         """Set up screen for start of game.
@@ -418,7 +397,7 @@ class GameScreen(Screen):
         """Pop next player from list_o_players.
 
         If we have a winner, put players in list_o_winners instead of back into list_o_players.
-        Keep comp_player turns moving, schedule roll.on_press.
+        Keep comp_player turns moving, schedule roll.on_release.
         """
         if not any([player.total_score >= 10000 for player in self.base.list_o_players]):
             temp = self.base.list_o_players.popleft()
@@ -433,7 +412,7 @@ class GameScreen(Screen):
             self.find_winner()
 
         elif self.base.current_player.comp_player:
-                Clock.schedule_once(self.base.buttons.roll.on_press, 1.)
+                Clock.schedule_once(self.base.buttons.roll.on_release, 1.)
 
     def find_winner(self) -> None:
         """Sort list_o_winners, pick the appropriate message, go to ResultsScreen."""
@@ -460,7 +439,7 @@ class GameScreen(Screen):
             [die for die in self.base.dice.children if die not in self.base.die_basket.old_keepers])]
 
         if not scoring_dice:
-            Clock.schedule_once(self.base.buttons.end_turn.on_press, .5)
+            Clock.schedule_once(self.base.buttons.end_turn.on_release, .5)
             return
 
         else:
@@ -480,39 +459,39 @@ class GameScreen(Screen):
 
         # if comp_player has six keepers, roll again.
         if len(self.base.die_basket.old_keepers) + len(self.base.die_basket.keepers) >= 6:
-            Clock.schedule_once(self.base.buttons.roll.on_press, 1.)
+            Clock.schedule_once(self.base.buttons.roll.on_release, 1.)
             return
 
         # there's already a winner, keep rolling.
         elif winners and winners[0].total_score >= (self.base.current_player.total_score +
                                                     self.base.current_player.round_score +
                                                     self.base.current_player.basket_score):
-            Clock.schedule_once(self.base.buttons.roll.on_press, 1.)
+            Clock.schedule_once(self.base.buttons.roll.on_release, 1.)
             return
 
         # comp_player has the winning score, stop!
         elif winners and (self.base.current_player.total_score +
                           self.base.current_player.round_score +
                           self.base.current_player.basket_score) > winners[0].total_score:
-            Clock.schedule_once(self.base.buttons.end_turn.on_press, 1.)
+            Clock.schedule_once(self.base.buttons.end_turn.on_release, 1.)
             return
 
         # comp_player is the first to reach the goal, stop!
         elif not winners and (self.base.current_player.total_score +
                               self.base.current_player.round_score +
                               self.base.current_player.basket_score) >= 10000:
-            Clock.schedule_once(self.base.buttons.end_turn.on_press, 1.)
+            Clock.schedule_once(self.base.buttons.end_turn.on_release, 1.)
             return
 
         # comp_player has 500 or more points and three or fewer dice to roll. Pretty good, stop.
         elif (self.base.current_player.round_score + self.base.current_player.basket_score >= 500 and
                 len(self.base.die_basket.old_keepers) + len(self.base.die_basket.keepers) >= 3):
-            Clock.schedule_once(self.base.buttons.end_turn.on_press, 1.)
+            Clock.schedule_once(self.base.buttons.end_turn.on_release, 1.)
             return
 
         # whelp, I suppose we'd better roll 'em.
         else:
-            Clock.schedule_once(self.base.buttons.roll.on_press, 1.)
+            Clock.schedule_once(self.base.buttons.roll.on_release, 1.)
             return
 
     def reset_round(self) -> None:
@@ -614,9 +593,6 @@ class ResultsScreen(Screen):
 
     message = StringProperty()
     game_mode = StringProperty()
-
-    def __init__(self, **kwargs) -> None:
-        super(ResultsScreen, self).__init__(**kwargs)
 
     def on_enter(self, *args: list) -> None:
         """Display result message label.
@@ -869,15 +845,6 @@ class Dice(Widget):
 
     num_dice = NumericProperty()
 
-    def __init__(self, **kwargs) -> None:
-        """Add string attribute id.
-
-        :param kwargs: Passed to super.
-        """
-        super(Dice, self).__init__(**kwargs)
-
-        self.id = 'dice'
-
     def update_dice(self, num_dice: int) -> None:
         """Determine dice to be removed.
 
@@ -984,9 +951,6 @@ class InformationStation(FloatLayout):
     """Layout for in-game score information. Inherits from FloatLayout."""
 
     box = ObjectProperty()
-
-    def __init__(self, **kwargs) -> None:
-        super(InformationStation, self).__init__(**kwargs)
 
     def add_player_totals(self) -> None:
         """Add widgets for displaying player totals."""
@@ -1337,6 +1301,14 @@ class NonKeeperKept(MyPopup):
         self.size_hint = (.7, .6)
 
 
+# class FirstTurnPopup(Popup):
+#
+#     """Informs player of 500 point threshold."""
+#
+#     def __init__(self, **kwargs):
+#         pass
+
+
 class GameButtonRow(BoxLayout):
 
     """Box for holding game operation buttons. Inherits from Box Layout."""
@@ -1345,26 +1317,17 @@ class GameButtonRow(BoxLayout):
     end_turn = ObjectProperty()
     keep = ObjectProperty()
 
-    def __init__(self, **kwargs) -> None:
-        super(GameButtonRow, self).__init__(**kwargs)
+    pass
 
 
 class RulesButton(Button):
 
     """Launch RulesPopup. Inherits from Button."""
 
-    def __init__(self, **kwargs) -> None:
-        """Add RulesPopup as attribute popup.
-
-        :param kwargs: Pass to super.
-        """
-        super(RulesButton, self).__init__(**kwargs)
-
-        self.popup = RulesPopup()
-
-    def on_press(self) -> None:
+    def on_release(self) -> None:
         """Open RulesPopup."""
-        self.popup.open()
+        popup = RulesPopup()
+        popup.open()
 
 
 class KeepAll(Button):
@@ -1372,13 +1335,10 @@ class KeepAll(Button):
     """Button for adding all dice to the keeper_box.
 
     Inherits from Button.
-    Overrides on_press.
+    Overrides on_release.
     """
 
-    def __init__(self, **kwargs) -> None:
-        super(KeepAll, self).__init__(**kwargs)
-
-    def on_press(self) -> None:
+    def on_release(self) -> None:
         """Add all dice not in keeper_box to keepers."""
         # do nothing if it's comp_player's turn.
         if self.parent.parent.current_player.comp_player:
@@ -1398,9 +1358,6 @@ class Exit(Button):
     Override on_release.
     """
 
-    def __init__(self, **kwargs) -> None:
-        super(Exit, self).__init__(**kwargs)
-
     def on_release(self) -> None:
         """Open confirmation popup."""
         popup = ReallyExit()
@@ -1412,13 +1369,10 @@ class EndTurn(Button):
     """Button to end player turn and move to next player.
 
     Inherits from Button.
-    Overrides on_press.
+    Overrides on_release.
     """
 
-    def __init__(self, **kwargs) -> None:
-        super(EndTurn, self).__init__(**kwargs)
-
-    def on_press(self, *args: list) -> None:
+    def on_release(self, *args: list) -> None:
         # do nothing if it's comp_player's turn.
         if self.parent.parent.current_player.comp_player and not args:
             return
@@ -1452,13 +1406,10 @@ class Roll(Button):
     """Button to roll dice.
 
     Inherits from Button.
-    Overrides on_press.
+    Overrides on_release.
     """
 
-    def __init__(self, **kwargs) -> None:
-        super(Roll, self).__init__(**kwargs)
-
-    def on_press(self, *args: list) -> None:
+    def on_release(self, *args: list) -> None:
         """Clear non-keepers, gray out keepers, add them to old_keepers.
 
         Call update_color, update_round_score, and update_dice.
@@ -1519,21 +1470,10 @@ class Quit(Button):
 
     """Button to quit game."""
 
-    def __init__(self, **kwargs) -> None:
-        super(Quit, self).__init__(**kwargs)
-
     def on_release(self) -> None:
         """Confirm user intention to quit with popup."""
         popup = ReallyQuit()
         popup.open()
-
-
-class BackButton(Button):
-
-    """Button for returning to previous screen."""
-
-    def __init__(self, **kwargs):
-        super(BackButton, self).__init__(**kwargs)
 
 
 class Base(FloatLayout):
@@ -1549,9 +1489,6 @@ class Base(FloatLayout):
     dice = ObjectProperty()
     info = ObjectProperty()
     score_area = ObjectProperty()
-
-    def __init__(self, **kwargs) -> None:
-        super(Base, self).__init__(**kwargs)
 
     def get_active_game(self) -> None:
         """Retrieve active game from PlayerNameScreen.
@@ -1650,22 +1587,6 @@ class Base(FloatLayout):
             f'{self.current_player.total_score:,} / \n{self.parent.point_goal:,}'
 
 
-class DieHolder(Widget):
-
-    """Container for dice added to die_basket."""
-
-    def __init__(self, **kwargs) -> None:
-        super(DieHolder, self).__init__(**kwargs)
-
-
-class KeeperBox(BoxLayout):
-
-    """Container for DieHolders."""
-
-    def __init__(self, **kwargs) -> None:
-        super(KeeperBox, self).__init__(**kwargs)
-
-
 class DieBasket(FloatLayout):
 
     """Container for scoring dice.
@@ -1681,9 +1602,11 @@ class DieBasket(FloatLayout):
     active_game = ObjectProperty()
     keeper_box = ObjectProperty()
 
-    def __init__(self, **kwargs) -> None:
-        super(DieBasket, self).__init__(**kwargs)
+    def on_parent(self, *args) -> None:
+        """Initialize valid valid_basket
 
+        :param args: Unused.
+        """
         self.valid_basket = rgba(colors['valid'])
 
     def on_keepers(self, *args: list) -> None:
@@ -1721,9 +1644,6 @@ class PlayerNumDropDown(DropDown):
     Overrides select method.
     """
 
-    def __init__(self, **kwargs):
-        super(PlayerNumDropDown, self).__init__(**kwargs)
-
     def select(self, num_players: int) -> None:
         """Update PlayerNumberScreen.num_players and close popup.
 
@@ -1737,9 +1657,6 @@ class PlayerNumDropDown(DropDown):
 class PointGoal(DropDown):
 
     """Menu for selecting game's ending score. Inherits from DropDown."""
-
-    def __init__(self, **kwargs) -> None:
-        super(PointGoal, self).__init__(**kwargs)
 
     def select(self, data: int) -> None:
         """Set point_goal with data selected by user. If turn_limit is also set, enable cont button.
@@ -1755,9 +1672,6 @@ class PointGoal(DropDown):
 class TurnLimit(DropDown):
 
     """Menu for setting maximum turns allowed in game. Inherits from DropDown."""
-
-    def __init__(self, **kwargs) -> None:
-        super(TurnLimit, self).__init__(**kwargs)
 
     def select(self, data: int) -> None:
         """Set turn_limit with data selected by user. If point_goal is also set, enable cont button.
@@ -1780,9 +1694,6 @@ class SoloGoalScreen(Screen):
 
     point_goal = NumericProperty()
     turn_limit = NumericProperty()
-
-    def __init__(self, **kwargs) -> None:
-        super(SoloGoalScreen, self).__init__(**kwargs)
 
     def on_enter(self) -> None:
         """Set up screen with labels, buttons and drop-down menus."""
@@ -1886,10 +1797,10 @@ class SoloGoalScreen(Screen):
 
 
 class SoloPLayerScore(BoxLayout):
+
     """Container for single player score information."""
 
-    def __init__(self, **kwargs) -> None:
-        super(SoloPLayerScore, self).__init__(**kwargs)
+    pass
 
 
 class SoloGameScreen(Screen):
@@ -1904,9 +1815,6 @@ class SoloGameScreen(Screen):
     turn = NumericProperty(0)
     point_goal = NumericProperty()
     turn_limit = NumericProperty()
-
-    def __init__(self, **kwargs) -> None:
-        super(SoloGameScreen, self).__init__(**kwargs)
 
     def on_enter(self, *args: list) -> None:
         """Set up screen to play challenge mode.
