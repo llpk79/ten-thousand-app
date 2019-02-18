@@ -376,6 +376,17 @@ class GameScreen(Screen):
         self.base.score_area.add_widget(self.base.list_o_players[0].score_display)
         self.next_round()
 
+    def open_first_popup(self, player):
+        popup = FirstTurnPopup()
+        Clock.schedule_once(popup.open, .75)
+        Clock.schedule_once(popup.dismiss, 4.75)
+        player.first_turn = False
+
+    def open_last_popup(self):
+        popup = LastChancePopup()
+        Clock.schedule_once(popup.open, .5)
+        Clock.schedule_once(popup.dismiss, 4.5)
+
     def next_round(self, *args: list) -> None:
         """Get a player if there is none else call reset_round and animate_score_out.
 
@@ -385,6 +396,9 @@ class GameScreen(Screen):
         if not self.base.current_player or self.base.current_player.name == '':
             temp = self.base.list_o_players.popleft()
             self.base.current_player = temp
+            if self.base.current_player.first_turn and not self.base.current_player.comp_player:
+                self.open_first_popup(self.base.current_player)
+
             self.base.list_o_players.append(temp)
 
             self.animate_indicator()
@@ -402,17 +416,22 @@ class GameScreen(Screen):
         if not any([player.total_score >= 10000 for player in self.base.list_o_players]):
             temp = self.base.list_o_players.popleft()
             self.base.current_player = temp
+            if self.base.current_player.first_turn and not self.base.current_player.comp_player:
+                self.open_first_popup(self.base.current_player)
             self.base.list_o_players.append(temp)
+            if self.base.current_player.comp_player:
+                Clock.schedule_once(self.base.buttons.roll.on_release, 1.)
 
         else:
             self.base.list_o_winners.append(self.base.current_player)
             self.base.current_player = self.base.list_o_players.popleft()
+            if self.base.list_o_players and self.base.current_player.comp_player:
+                Clock.schedule_once(self.base.buttons.roll.on_release, 1.)
+            if self.base.list_o_players and not self.base.current_player.comp_player:
+                self.open_last_popup()
 
         if not self.base.list_o_players:
             self.find_winner()
-
-        elif self.base.current_player.comp_player:
-                Clock.schedule_once(self.base.buttons.roll.on_release, 1.)
 
     def find_winner(self) -> None:
         """Sort list_o_winners, pick the appropriate message, go to ResultsScreen."""
@@ -1052,7 +1071,7 @@ class YouSurePopup(MyPopup):
         btn = Button(text='MEH, I DON\'T WANT THOSE.',
                      size_hint=(.8, .4),
                      font_size=75,
-                     pos_hint={'x': .2, 'y': .1},
+                     pos_hint={'x': .1, 'y': .1},
                      background_normal='',
                      background_color=rgba(colors['prime dark']))
         btn.bind(on_release=self.leave_points)
@@ -1301,12 +1320,42 @@ class NonKeeperKept(MyPopup):
         self.size_hint = (.7, .6)
 
 
-# class FirstTurnPopup(Popup):
-#
-#     """Informs player of 500 point threshold."""
-#
-#     def __init__(self, **kwargs):
-#         pass
+class FirstTurnPopup(MyPopup):
+
+    """Informs player of 500 point threshold."""
+
+    def __init__(self, **kwargs):
+        super(FirstTurnPopup, self).__init__(**kwargs)
+
+        self.title = 'Here we go!'
+
+        content = Label(text='You\'ll need to get 500 points \n\n'
+                             'in one turn to get on the board.\n\n'
+                             'Good Luck!',
+                        font_size=60,
+                        halign='center')
+
+        self.content = content
+
+
+class LastChancePopup(MyPopup):
+
+    """Informs player this is their last turn."""
+
+    def on_open(self):
+        screen_manager = self.parent.children[1]
+        game_screen = next(screen for screen in screen_manager.screens if screen.name == 'game')
+        current_player = game_screen.base.current_player
+        winner_list = game_screen.base.list_o_winners
+        winner = sorted(game_screen.base.list_o_winners, key=lambda player: player.total_score, reverse=True)[0]
+
+        self.title = f'{current_player.name.title()}, this is your Last Chance!'
+
+        content = Label(text=f'{winner.name.title()} has {winner.total_score:,} points.\n\n'
+                             'Keep rolling to beat them!',
+                        font_size=60,
+                        halign='center')
+        self.content = content
 
 
 class GameButtonRow(BoxLayout):
