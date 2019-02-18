@@ -128,6 +128,7 @@ class Player(object):
         self.score_display = None
         self.info = None
         self.comp_player = False
+        self.first_turn = True
 
 
 def main():
