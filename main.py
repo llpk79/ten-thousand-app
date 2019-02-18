@@ -256,13 +256,13 @@ class PlayerNameScreen(Screen):
             if self.game_mode == 'comp' and i == self.num_players:
                 text = 'Enter Computer Player Name:'
                 # Position above the keyboard and move upward slightly with more players. Place subsequent rows below.
-                position = {'x': .1, 'y': .715 + (self.num_players / 30) - (i * .135)}
+                position = {'x': .115, 'y': .715 + (self.num_players / 30) - (i * .135)}
             else:
                 text = f'Enter Player {i}\'s name:'
-                position = {'x': .15, 'y': .715 + (self.num_players / 30) - (i * .135)}
+                position = {'x': .165, 'y': .715 + (self.num_players / 30) - (i * .135)}
 
             label = Label(text=text,
-                          font_size=60,
+                          font_size=75,
                           color=rgba(colors['text']),
                           pos_hint=position,
                           size_hint=(.25, .1),
@@ -1050,7 +1050,7 @@ class YouSurePopup(MyPopup):
                       pos_hint={'x': 0, 'y': .225})
 
         btn = Button(text='MEH, I DON\'T WANT THOSE.',
-                     size_hint=(.6, .4),
+                     size_hint=(.8, .4),
                      font_size=75,
                      pos_hint={'x': .2, 'y': .1},
                      background_normal='',

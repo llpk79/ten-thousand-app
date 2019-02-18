@@ -39,27 +39,56 @@ ScreenManager:
         name: 'results'
         manager: 'screen_manager'
 
-<SoloGameButton>:
+<MyButton@Button>:
+    color: rgba(colors['text'])
+    font_size: 75
+    background_normal: ''
+    background_color: rgba(colors['prime dark'])
 
 <FriendsButton>:
+    text: 'PLAY WITH FRIENDS'
+    color: rgba(colors['text'])
+    font_size: 75
+    size_hint: .35, .1
+    pos_hint: {'x': .325, 'y': 0.6}
+    background_normal: ''
+    background_color: rgba(colors['prime dark'])
 
 <MyOwnSelfButton>:
+    text: 'PLAY VS COMPUTER'
+    color: rgba(colors['text'])
+    font_size: 75
+    size_hint: .35, .1
+    pos_hint: {'x': .325, 'y': .4}
+    background_normal: ''
+    background_color: rgba(colors['prime dark'])
+
+<SoloGameButton>:
+    text: 'CHALLENGE MODE'
+    color: rgba(colors['text'])
+    font_size: 75
+    size_hint: .35, .1
+    pos_hint: {'x': .325, 'y': .2}
+    background_normal: ''
+    background_color: rgba(colors['prime dark'])
 
 <BackButton@Button>:
     text: 'BACK'
-    pos_hint: {'x': .05, 'y': .05}
-    size_hint: (.1, .075)
     color: rgba(colors['text'])
+    font_size: 75
+    size_hint: (.1, .075)
+    pos_hint: {'x': .05, 'y': .05}
     background_normal: ''
     background_color: rgba(colors['prime dark'])
 
 <Exit>:
     text: 'EXIT'
+    color: rgba(colors['text'])
+    font_size: 75
     pos_hint: {'x': .05, 'y': .05}
     size_hint: .1, .075
     background_normal: ''
     background_color: rgba(colors['prime dark'])
-
 
 <Background@Image>:
     source: 'images/tabletop4.jpg'
@@ -72,8 +101,8 @@ ScreenManager:
     Label:
         text: 'Welcome to Ten Thousand!'
         halign: 'center'
-        font_size: 100
         color: rgba(colors['text'])
+        font_size: 100
         size_hint: .4, .1
         pos_hint: {'x': .3, 'y': .8}
     Label:
@@ -83,29 +112,8 @@ ScreenManager:
         size_hint: .2, .1
         pos_hint: {'x': .4, 'y': .725}
     FriendsButton:
-        text: 'PLAY WITH FRIENDS'
-        color: rgba(colors['text'])
-        font_size: 75
-        size_hint: .35, .1
-        pos_hint: {'x': .325, 'y': 0.6}
-        background_normal: ''
-        background_color: rgba(colors['prime dark'])
     MyOwnSelfButton:
-        text: 'PLAY VS COMPUTER'
-        color: rgba(colors['text'])
-        font_size: 75
-        size_hint: .35, .1
-        pos_hint: {'x': .325, 'y': .4}
-        background_normal: ''
-        background_color: rgba(colors['prime dark'])
     SoloGameButton:
-        text: 'CHALLENGE MODE'
-        color: rgba(colors['text'])
-        font_size: 75
-        size_hint: .35, .1
-        pos_hint: {'x': .325, 'y': .2}
-        background_normal: ''
-        background_color: rgba(colors['prime dark'])
     Exit:
 
 <ResultsScreen>:
@@ -116,17 +124,11 @@ ScreenManager:
         pos_hint: {'x': .25, 'y': .2}
         spacing: 5
         padding: [5]
-        Button:
+        MyButton:
             text: 'PLAY AGAIN'
-            font_size: 75
-            background_normal: ''
-            background_color: rgba(colors['prime dark'])
             on_release: root.play_again()
-        Button:
+        MyButton:
             text: 'MAIN MENU'
-            font_size: 75
-            background_normal: ''
-            background_color: rgba(colors['prime dark'])
             on_release: root.to_main_menu()
 
 <PlayerNameScreen>:
@@ -143,32 +145,28 @@ ScreenManager:
     Label:
         text: 'How many people are playing?'
         halign: 'center'
-        font_size: 100
         color: rgba(colors['text'])
+        font_size: 100
         size_hint: (.275, .075)
         pos_hint: {'x': .35, 'y': .8}
     Label:
         id: num_label
         text: 'Players Selected: '
+        color: rgba(colors['text'])
         font_size: 75
         size_hint: .2, .1
         pos_hint: {'x': .4, 'y': .15}
-    Button:
+    MyButton:
         id: cont
+        text: 'CONTINUE'
         size_hint: .2, .1
         pos_hint: {'x': .4, 'y': .05}
-        text: 'CONTINUE'
-        font_size: 75
-        background_normal: ''
-        background_color: rgba(colors['prime dark'])
         on_release: root.parent.current = 'name'
         disabled: True
     BackButton:
         on_release: root.to_menu_screen()
 
 <DieHolder@Widget>:
-
-<KeeperBox@BoxLayout>:
 
 <DieBasket>:
     keeper_box: keeper_box
@@ -185,7 +183,7 @@ ScreenManager:
         font_size: 40
         halign: 'center'
         pos_hint: {'x': self.x, 'y': -0.425}
-    KeeperBox:
+    BoxLayout:
         id: keeper_box
         pos_hint: {'x': .05, 'y': 0.125}
         size_hint: .95, 0.4
@@ -269,11 +267,7 @@ ScreenManager:
         pos_hint: {'x': .05, 'y': .2}
         orientation: 'vertical'
     RulesButton:
-        size_hint: .45, .1
-        pos_hint: {'x': .025, 'y': .025}
     Quit:
-        size_hint: .45, .1
-        pos_hint: {'x': .525, 'y': .025}
 
 <ScoreArea>:
     size_hint: .7, 0.1
@@ -287,6 +281,8 @@ ScreenManager:
     font_size: 75
     background_normal: ''
     background_color: rgba(colors['prime dark'])
+    size_hint: .45, .1
+    pos_hint: {'x': .525, 'y': .025}
 
 <Roll>:
     text: 'ROLL \'EM!'
@@ -316,6 +312,8 @@ ScreenManager:
     font_size: 75
     background_normal: ''
     background_color: rgba(colors['prime dark'])
+    size_hint: .45, .1
+    pos_hint: {'x': .025, 'y': .025}
 
 <GameButtonRow>:
     size_hint: .7, .15
@@ -386,14 +384,11 @@ ScreenManager:
             id: diff
             font_size: 75
             text: 'Difficulty:'
-    Button:
+    MyButton:
         id: cont
+        text: 'CONTINUE'
         size_hint: .2, .1
         pos_hint: {'x': .4, 'y': .05}
-        text: 'CONTINUE'
-        font_size: 75
-        background_normal: ''
-        background_color: rgba(colors['prime dark'])
         on_release: root.parent.current = 'name'
         disabled: True
     BackButton:
