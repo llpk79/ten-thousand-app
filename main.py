@@ -30,15 +30,44 @@ from media import sounds, die_images
 from random import randint, uniform
 
 
+def set_text_to_fit(widget: Widget) -> None:
+    """Adjust text size to fit widget size for any screen size.
+
+    :param widget: A widget with texture_size attribute.
+    """
+    m = .75
+    widget.font_size = widget.height * m
+    widget.texture_update()
+    while m > 0.45 and widget.texture_size[0] > widget.width:
+        m -= 0.05
+        widget.font_size = widget.height * m
+        widget.texture_update()
+
+
 class MenuScreen(Screen):
+    """The main menu screen.
 
-    """The main menu screen."""
+    Inherits from Screen.
+    Overrides on_enter.
+    """
 
-    pass
+    def __init__(self, **kwargs):
+        super(MenuScreen, self).__init__(**kwargs)
+
+    def set_text_size(self, *args) -> None:
+        """Size text for all child widgets.
+
+        :param args:
+        """
+        for widget in self.children:
+            set_text_to_fit(widget)
+
+    def on_enter(self) -> None:
+        """Call set_text_size when entering screen."""
+        self.set_text_size()
 
 
 class FriendsButton(Button):
-
     """Button for choosing multiplayer game mode.
 
     Inherits from Button.
@@ -46,18 +75,18 @@ class FriendsButton(Button):
     """
 
     def on_release(self) -> None:
-        """Set name_screen.game_mode and schedule move to PlayerNumberScreen."""
-        name_screen = next(screen for screen in self.parent.parent.screens if screen.name == 'name')
-        name_screen.game_mode = 'game'
-        Clock.schedule_once(self.to_num_screen, .2)
+        """Schedule move to PlayerNumberScreen."""
+        Clock.schedule_once(self.to_num_screen, .05)
 
     def to_num_screen(self, *args: list) -> None:
-        """Set current screen to PlayerNumberScreen."""
+        """Set current screen to PlayerNumberScreen.
+
+        :param args: Unused.
+        """
         self.parent.parent.current = 'number'
 
 
 class MyOwnSelfButton(Button):
-
     """Button to select single player v computer game mode.
 
     Inherits from Button.
@@ -66,11 +95,10 @@ class MyOwnSelfButton(Button):
 
     def on_release(self) -> None:
         """Set number of players and schedule move to PlayerNameScreen."""
-        num_screen = next(screen for screen in self.parent.parent.screens if screen.name == 'number')
-        num_screen.num_players = 1
-        names = next(screen for screen in self.parent.parent.screens if screen.name == 'name')
-        names.game_mode = 'comp'
-        Clock.schedule_once(self.to_name_screen, .2)
+        name_screen = next(screen for screen in self.parent.parent.screens if screen.name == 'name')
+        name_screen.game_mode = 'comp'
+        name_screen.num_players = 2
+        Clock.schedule_once(self.to_name_screen, .05)
 
     def to_name_screen(self, *args: list) -> None:
         """Set current screen to PlayerNameScreen."""
@@ -78,7 +106,6 @@ class MyOwnSelfButton(Button):
 
 
 class SoloGameButton(Button):
-
     """Set game mode to challenge mode.
 
     Inherits from Button.
@@ -103,7 +130,6 @@ class SoloGameButton(Button):
 
 
 class PlayerNumberScreen(Screen):
-
     """Screen for setting number of players.
 
     Inherits from Screen.
@@ -111,8 +137,9 @@ class PlayerNumberScreen(Screen):
     """
 
     num_players = NumericProperty()
+    game_mode = StringProperty('game')
 
-    def on_enter(self) -> None:
+    def on_pre_enter(self) -> None:
         """Set up screen with widgets for setting number of players and optional comp player."""
         if not self.num_players:
             self.cont.disabled = True
@@ -132,7 +159,7 @@ class PlayerNumberScreen(Screen):
             btn = Button(text=num,
                          id=str(i),
                          size_hint_y=None,
-                         height=125,
+                         height=Window.height / 10,
                          background_normal='',
                          background_color=rgba(colors['second']))
             # Use the id number to set the number of players.
@@ -169,7 +196,7 @@ class PlayerNumberScreen(Screen):
         :param game_mode: 'comp', 'game' or 'solo'.
         """
         add_comp_player_button = next(child for child in self.children if child.id == 'compy')
-        if game_mode == 'comp':
+        if self.game_mode == 'comp':
             add_comp_player_button.text = 'COMPUTER FRIEND: YES'
         elif game_mode == 'game':
             add_comp_player_button.text = 'COMPUTER FRIEND: NO'
@@ -179,19 +206,27 @@ class PlayerNumberScreen(Screen):
 
         :param args: Unused.
         """
-        mode = ''
-        name_screen = next(screen for screen in self.parent.screens if screen.name == 'name')
-        if name_screen.game_mode == 'comp':
-            name_screen.game_mode = mode = 'game'
-        elif name_screen.game_mode == 'game':
-            name_screen.game_mode = mode = 'comp'
-        self.set_btn_text(mode)
+        if self.game_mode == 'comp':
+            self.game_mode = 'game'
+        elif self.game_mode == 'game':
+            self.game_mode = 'comp'
+        self.set_btn_text(self.game_mode)
 
     def set_label(self) -> None:
         """Set num_label text and enable cont button."""
         texts = {1: 'ONE', 2: 'TWO', 3: 'THREE', 4: 'FOUR', 5: 'FIVE'}
         self.num_label.text = f'Players Selected: {texts[self.num_players]}'
+        set_text_to_fit(self.num_label)
         self.cont.disabled = False
+        set_text_to_fit(self.cont)
+
+    def to_name_screen(self) -> None:
+        name_screen = next(screen for screen in self.parent.screens if screen.name == 'name')
+        if self.game_mode == 'game':
+            name_screen.num_players = self.num_players
+        else:
+            name_screen.num_players = self.num_players
+        self.parent.current = 'name'
 
     def to_menu_screen(self) -> None:
         """Reset PlayerNameScreen, PlayerNumberScreen and go to MenuScreen."""
@@ -203,7 +238,6 @@ class PlayerNumberScreen(Screen):
 
 
 class FocusInput(TextInput):
-
     """Text input box adds player name after text entered if box becomes unfocused.
 
     Makes entering names easier.
@@ -218,7 +252,7 @@ class FocusInput(TextInput):
         super(FocusInput, self).__init__(**kwargs)
 
         self.multiline = False
-        self.font_size = 60
+        self.font_size = self.height * .425
         self.write_tab = False
         self.size_hint = (.35, .09)
 
@@ -233,7 +267,6 @@ class FocusInput(TextInput):
 
 
 class PlayerNameScreen(Screen):
-
     """Screen for setting player names.
 
     Inherits from Screen.
@@ -245,18 +278,14 @@ class PlayerNameScreen(Screen):
     num_players = NumericProperty()
     game_mode = StringProperty()
 
-    def on_enter(self) -> None:
+    def on_pre_enter(self) -> None:
         """Set up screen with widgets for entering player names."""
-        self.get_num_players()
-        if self.game_mode == 'comp':
-            self.num_players += 1
-
         # Place a label and input_name text-box for each player.
         for i in range(1, self.num_players + 1):
             if self.game_mode == 'comp' and i == self.num_players:
                 text = 'Enter Computer Player Name:'
                 # Position above the keyboard and move upward slightly with more players. Place subsequent rows below.
-                position = {'x': .115, 'y': .715 + (self.num_players / 30) - (i * .135)}
+                position = {'x': .145, 'y': .715 + (self.num_players / 30) - (i * .135)}
             else:
                 text = f'Enter Player {i}\'s name:'
                 position = {'x': .165, 'y': .715 + (self.num_players / 30) - (i * .135)}
@@ -271,11 +300,12 @@ class PlayerNameScreen(Screen):
 
             input_name = (FocusInput(pos_hint={'x': .475, 'y': .715 + (self.num_players / 30) - (i * .135)}))
             self.add_widget(input_name)
+        Clock.schedule_once(self.set_text_size, .01)
 
-    def get_num_players(self) -> None:
-        """Get number of players from PlayerNumberScreen."""
-        number_screen = next(screen for screen in self.parent.screens if screen.name is 'number')
-        self.num_players = number_screen.num_players
+    def set_text_size(self, *args) -> None:
+        for widget in self.children:
+            if isinstance(widget, (Label, Button)):
+                set_text_to_fit(widget)
 
     def add_player(self, focus_input: 'FocusInput', invalid: bool) -> None:
         """Add player to list of player_names. Call start_game after last player added.
@@ -298,8 +328,13 @@ class PlayerNameScreen(Screen):
             self.active_game.player_list[-1].comp_player = True
 
         if self.game_mode == 'game' or self.game_mode == 'comp':
+            game_screen = next(screen for screen in self.parent.screens if screen.name == 'game')
+            game_screen.base.active_game = self.active_game
             self.parent.current = 'game'
+
         elif self.game_mode == 'solo':
+            solo_screen = next(screen for screen in self.parent.screens if screen.name == 'solo')
+            solo_screen.base.active_game = self.active_game
             self.parent.current = 'solo'
 
     def reset_goal_screen(self) -> None:
@@ -333,21 +368,18 @@ class PlayerNameScreen(Screen):
 
 
 class PlayerScore(BoxLayout):
-
     """Empty box to hold PlayerScore(s)."""
 
     pass
 
 
 class ScoreArea(BoxLayout):
-
     """Empty box to hold player score labels."""
 
     pass
 
 
 class GameScreen(Screen):
-
     """Screen game is played on.
 
     Inherits from Screen.
@@ -364,7 +396,6 @@ class GameScreen(Screen):
 
         :param args: Unused.
         """
-        self.base.get_active_game()
         self.base.get_active_game_players()
 
         for player in self.base.list_o_players:
@@ -373,7 +404,8 @@ class GameScreen(Screen):
             player_score.name.text = player.name.title()
             player.score_display = player_score
 
-        self.base.score_area.add_widget(self.base.list_o_players[0].score_display)
+        first_player = self.base.list_o_players[0].score_display
+        self.base.score_area.add_widget(first_player)
         self.next_round()
 
     def open_first_popup(self, player):
@@ -401,7 +433,8 @@ class GameScreen(Screen):
 
             self.base.list_o_players.append(temp)
 
-            self.animate_indicator()
+            Clock.schedule_once(self.animate_indicator, .01)
+            Clock.schedule_once(self.base.set_score_text_size, .0001)
             return None
 
         self.reset_round()
@@ -466,7 +499,7 @@ class GameScreen(Screen):
             Clock.schedule_once(self.overlord_status_check, float(len(scoring_dice)))
             for i, die in enumerate(scoring_dice):
                 # delay first animation by .8sec.
-                Clock.schedule_once(die.add_to_keepers, float(i * .85 + .8))
+                Clock.schedule_once(die.add_to_keepers, i * .85 + .8)
 
     def overlord_status_check(self, *args: list) -> None:
         """Determine if comp_player should roll again.
@@ -504,7 +537,7 @@ class GameScreen(Screen):
 
         # comp_player has 500 or more points and three or fewer dice to roll. Pretty good, stop.
         elif (self.base.current_player.round_score + self.base.current_player.basket_score >= 500 and
-                len(self.base.die_basket.old_keepers) + len(self.base.die_basket.keepers) >= 3):
+              len(self.base.die_basket.old_keepers) + len(self.base.die_basket.keepers) >= 3):
             Clock.schedule_once(self.base.buttons.end_turn.on_release, 1.)
             return
 
@@ -520,6 +553,7 @@ class GameScreen(Screen):
         self.base.die_basket.valid_basket = rgba(colors['valid'])
         self.base.buttons.roll.update_color()
         self.base.buttons.roll.text = 'ROLL \'EM!'
+        set_text_to_fit(self.base.buttons.roll)
         self.base.current_player.round_score = 0
         self.base.die_basket.keepers.clear()
         self.base.die_basket.old_keepers.clear()
@@ -529,6 +563,7 @@ class GameScreen(Screen):
         self.base.update_display('round')
         self.base.update_display('basket')
         self.base.buttons.end_turn.text = 'END TURN'
+        set_text_to_fit(self.base.buttons.end_turn)
         self.base.buttons.end_turn.disabled = True
         self.base.buttons.end_turn.color = [1, 1, 1, .3]
 
@@ -539,12 +574,12 @@ class GameScreen(Screen):
         """
         self.parent.current = 'results'
 
-    def animate_indicator(self) -> None:
+    def animate_indicator(self, *args) -> None:
         """Animate indicator to current_player position."""
         indicator_pos = self.base.current_player.info.children[2]
         indicator = self.base.info.children[0]
         anim = Animation(pos=indicator_pos.pos, d=.25)
-        anim &= Animation(scale=.5, d=.2)
+        anim &= Animation(scale=indicator_pos.width / 50, d=.2)
         anim.start(indicator)
 
     # noinspection PyArgumentList
@@ -600,10 +635,10 @@ class GameScreen(Screen):
         self.base.score_area.add_widget(new_display)
         self.base.buttons.end_turn.disabled = False
         self.base.buttons.end_turn.color = rgba(colors['text'])
+        Clock.schedule_once(self.base.set_score_text_size, .0001)
 
 
 class ResultsScreen(Screen):
-
     """Screen displaying results and options to play again or quit app.
 
     Inherits from Screen.
@@ -683,7 +718,9 @@ class ResultsScreen(Screen):
         """
         num_screen.num_players = 0
         num_screen.num_label.text = 'Selected Players: '
+        set_text_to_fit(num_screen.num_label)
         num_screen.cont.disabled = True
+        set_text_to_fit(num_screen.cont)
 
     def reset_name_screen(self, name_screen: Screen) -> None:
         """Reset PlayerNameScreen variables and widgets.
@@ -719,6 +756,7 @@ class ResultsScreen(Screen):
         goal_screen.turn_limit = 0
         goal_screen.point_goal = 0
         goal_screen.goals.diff.text = 'Difficulty:'
+        set_text_to_fit(goal_screen.goals.diff)
 
     def reset_solo_screen(self, solo_screen: Screen) -> None:
         """Reset SoloGameScreen widgets and variables.
@@ -741,7 +779,6 @@ class ResultsScreen(Screen):
 
 
 class DieScatter(Scatter):
-
     """Functional container for dice images
 
     Inherits from Scatter.
@@ -859,7 +896,6 @@ class DieScatter(Scatter):
 
 
 class Dice(Widget):
-
     """Platform owning and controlling all dice. Inherits from Widget."""
 
     num_dice = NumericProperty()
@@ -896,9 +932,10 @@ class Dice(Widget):
 
         roll = [randint(1, 6) for _ in range(num_dice)]
         new_dice = []
+        scale = (Window.height / 1000) + .1
 
         for x, pos in zip(roll, positions[:num_dice + 1]):
-            scatter = DieScatter(id=str(x), scale=1.6)
+            scatter = DieScatter(id=str(x), scale=scale)
             image = Image(source=die_images[x])
             scatter.add_widget(image)
             self.add_widget(scatter)
@@ -942,7 +979,6 @@ class Dice(Widget):
 
 
 class Indicator(Scatter):
-
     """Die Image for use as a turn indicator.
 
     Inherits from Scatter.
@@ -966,7 +1002,6 @@ class Indicator(Scatter):
 
 
 class InformationStation(FloatLayout):
-
     """Layout for in-game score information. Inherits from FloatLayout."""
 
     box = ObjectProperty()
@@ -974,37 +1009,58 @@ class InformationStation(FloatLayout):
     def add_player_totals(self) -> None:
         """Add widgets for displaying player totals."""
         base = self.parent
+        info_holders = [holder for holder in reversed(self.box.children)]
+        for holder in info_holders:
+            if holder.children:
+                holder.children.clear()
         for player in base.list_o_players:
             lil_box = BoxLayout(id=player.name)
             turn_indicator_holder = Widget(id='turn',
                                            size_hint=(.025, 1),
-                                           pos_hint={'x': 0, 'y': .45})
+                                           pos_hint={'x': 0, 'y': .3})
             lil_box.add_widget(turn_indicator_holder)
 
             lil_box.add_widget(Label(id='name',
                                      text=player.name.title(),
                                      font_size=60,
                                      halign='left',
-                                     size_hint=(.6, 1),
+                                     size_hint=(.55, 1),
                                      pos_hint={'x': .025, 'y': 0},
                                      shorten=True,
                                      shorten_from='right'))
             total = Label(id='total',
                           text=str(player.total_score),
                           font_size=60,
-                          size_hint=(.375, 1),
-                          pos_hint={'x': .525, 'y': 0})
+                          size_hint=(.45, 1),
+                          pos_hint={'x': .575, 'y': 0})
             lil_box.add_widget(total)
 
-            self.box.add_widget(lil_box)
+            for holder in info_holders:
+                if not holder.children:
+                    holder.add_widget(lil_box)
+                    break
             player.info = lil_box
 
         indicator = Indicator(id='indi')
         self.add_widget(indicator)
+        Clock.schedule_once(self.set_text_size, .01)
+
+    def set_text_size(self, *args) -> None:
+        if isinstance(args[0], float):
+            for widget in self.box.children:
+                if isinstance(widget, (Label, Button)):
+                    set_text_to_fit(widget)
+                if widget.children:
+                    self.set_text_size(widget)
+        else:
+            for widget in args[0].children:
+                if isinstance(widget, (Label, Button)):
+                    set_text_to_fit(widget)
+                if widget.children:
+                    self.set_text_size(widget)
 
 
 class MyPopup(Popup):
-
     """Template for popups, inherits from Popup."""
 
     def __init__(self, **kwargs) -> None:
@@ -1014,14 +1070,18 @@ class MyPopup(Popup):
         """
         super(MyPopup, self).__init__(**kwargs)
 
-        self.title_size = 75
+        self.title_size = 65
         self.title_align = 'center'
         self.separator_color = rgba(colors['second'])
         self.size_hint = (.6, .5)
 
+    def set_popup_text_size(self, *args):
+        for widget in self.children[0].children:
+            if isinstance(widget, (Label, Button)):
+                set_text_to_fit(widget)
+
 
 class RulesPopup(MyPopup):
-
     """Popup displaying rules of the game. Inherits from MyPopup."""
 
     def __init__(self, **kwargs) -> None:
@@ -1048,10 +1108,11 @@ class RulesPopup(MyPopup):
 
         self.content = container
         self.size_hint = (.9, .9)
+        set_text_to_fit(label)
+        set_text_to_fit(label2)
 
 
 class YouSurePopup(MyPopup):
-
     """Ensure user knows points are left on the board. Inherits from MyPopup."""
 
     def __init__(self, **kwargs) -> None:
@@ -1064,16 +1125,16 @@ class YouSurePopup(MyPopup):
         self.title = 'Are You Sure?!'
 
         label = Label(text='You still have points on the board!',
-                      font_size=65,
+                      font_size=45,
                       halign='center',
                       pos_hint={'x': 0, 'y': .225})
 
-        btn = Button(text='MEH, I DON\'T WANT THOSE.',
-                     size_hint=(.8, .4),
-                     font_size=75,
-                     pos_hint={'x': .1, 'y': .1},
-                     background_normal='',
-                     background_color=rgba(colors['prime dark']))
+        btn = MyButton(text='MEH, I DON\'T WANT THOSE.',
+                       size_hint=(.8, .4),
+                       font_size=75,
+                       pos_hint={'x': .1, 'y': .1},
+                       background_normal='',
+                       background_color=rgba(colors['prime dark']))
         btn.bind(on_release=self.leave_points)
 
         base = FloatLayout()
@@ -1081,6 +1142,8 @@ class YouSurePopup(MyPopup):
         base.add_widget(btn)
 
         self.content = base
+        set_text_to_fit(label)
+        set_text_to_fit(btn)
 
     def leave_points(self, *args: list) -> None:
         """Call next game for active screen and close popup.
@@ -1099,7 +1162,6 @@ class YouSurePopup(MyPopup):
 
 
 class ReallyExit(MyPopup):
-
     """Confirm user intention to leave app. Inherits from MyPopup."""
 
     def __init__(self, **kwargs) -> None:
@@ -1137,6 +1199,9 @@ class ReallyExit(MyPopup):
         base.add_widget(yes_go)
         base.add_widget(no_stay)
         self.content = base
+        set_text_to_fit(label)
+        set_text_to_fit(yes_go)
+        set_text_to_fit(no_stay)
 
     def stay(self, *args: list) -> None:
         """Dismiss popup and remain in-app.
@@ -1154,7 +1219,6 @@ class ReallyExit(MyPopup):
 
 
 class ReallyQuit(MyPopup):
-
     """Confirm user intention to quit the game. Inherits from MyPopup."""
 
     def __init__(self, **kwargs) -> None:
@@ -1164,11 +1228,13 @@ class ReallyQuit(MyPopup):
         """
         super(ReallyQuit, self).__init__(**kwargs)
 
-        self.title = 'You\'ve got a good thing going here.'
+        self.title = 'So soon?'
 
         label = Label(text='Are you sure you want quit your game?',
+                      font_size=65,
                       halign='center',
                       pos_hint={'x': 0, 'y': .3})
+
         yes_go = Button(text='Quit',
                         font_size=75,
                         size_hint=(.4, .4),
@@ -1190,6 +1256,9 @@ class ReallyQuit(MyPopup):
         base.add_widget(yes_go)
         base.add_widget(no_stay)
         self.content = base
+        set_text_to_fit(label)
+        set_text_to_fit(yes_go)
+        set_text_to_fit(no_stay)
 
     def stay(self, *args: list) -> None:
         """Close the popup.
@@ -1227,7 +1296,6 @@ class ReallyQuit(MyPopup):
 
 
 class SixKeepersPopup(MyPopup):
-
     """Congratulate user on a good round. Inherits from MyPopup."""
 
     def __init__(self, **kwargs) -> None:
@@ -1239,16 +1307,18 @@ class SixKeepersPopup(MyPopup):
 
         self.title = 'Congratulations!'
 
-        label = Label(text='You got six keepers! Roll \'em all again!',
-                      font_size=65,
-                      halign='center')
+        label = MyLabel(text='You got six keepers! Roll \'em all again!',
+                        font_size=65,
+                        size_hint=(.5, .75),
+                        pos_hint={'x': 0, 'y': .1},
+                        halign='center')
 
         self.content = label
         self.size_hint = (.6, .35)
+        set_text_to_fit(label)
 
 
 class ThresholdNotMet(MyPopup):
-
     """Inform user the point threshold for a first turn has not been met. Inherits from MyPopup."""
 
     def __init__(self, **kwargs) -> None:
@@ -1260,15 +1330,17 @@ class ThresholdNotMet(MyPopup):
 
         self.title = 'Hold Up!'
 
-        label = Label(text='You haven\'t earned 500 points in one turn yet.\n\n Keep rolling!',
-                      font_size=65,
-                      halign='center')
+        label = MyLabel(text='You haven\'t earned 500 points in one turn yet.\n Keep rolling!',
+                        font_size=45,
+                        size_hint=(.5, .75),
+                        pos_hint={'x': 0, 'y': .1},
+                        halign='center')
 
         self.content = label
+        set_text_to_fit(label)
 
 
 class FarklePopup(MyPopup):
-
     """Inform user that no keepers were thrown and their turn is over. Inherits from MyPopup."""
 
     def __init__(self, **kwargs) -> None:
@@ -1280,16 +1352,18 @@ class FarklePopup(MyPopup):
 
         self.title = 'Oh No!'
 
-        label = Label(text='You didn\'t get any keepers! Your turn is over.\n\n:(',
-                      font_size=65,
-                      halign='center')
+        label = MyLabel(text='You didn\'t get any keepers! Your turn is over.\n:(',
+                        font_size=65,
+                        size_hint=(.5, .75),
+                        pos_hint={'x': 0, 'y': .1},
+                        halign='center')
 
         self.content = label
         self.size_hint = (.6, .5)
+        set_text_to_fit(label)
 
 
 class NonKeeperKept(MyPopup):
-
     """Warn user that a non-scoring die is in the scoring area. Offer button to open RulesPopup.
 
     Inherits from MyPopup.
@@ -1305,12 +1379,12 @@ class NonKeeperKept(MyPopup):
         self.title = 'WARNING!!'
 
         label = Label(text='You have non-scoring dice in the scoring area.'
-                           '\n\nRemove non-scoring dice to turn line green and continue',
-                      font_size=65,
+                           '\nRemove non-scoring dice to continue',
+                      font_size=45,
                       halign='center',
                       pos_hint={'x': 0, 'y': .25})
-        btn = RulesButton(size_hint=(.5, .3),
-                          pos_hint={'x': .25, 'y': .1})
+        btn = RulesButton(size_hint=(.25, .3),
+                          pos_hint={'x': .375, 'y': .1})
 
         layout = FloatLayout()
         layout.add_widget(label)
@@ -1318,10 +1392,11 @@ class NonKeeperKept(MyPopup):
 
         self.content = layout
         self.size_hint = (.7, .6)
+        set_text_to_fit(label)
+        set_text_to_fit(btn)
 
 
 class FirstTurnPopup(MyPopup):
-
     """Informs player of 500 point threshold."""
 
     def __init__(self, **kwargs):
@@ -1329,17 +1404,17 @@ class FirstTurnPopup(MyPopup):
 
         self.title = 'Here we go!'
 
-        content = Label(text='You\'ll need to get 500 points \n\n'
-                             'in one turn to get on the board.\n\n'
-                             'Good Luck!',
-                        font_size=60,
-                        halign='center')
+        content = MyLabel(text='You\'ll need to get 500 points \n'
+                               'in one turn to get on the board.\n'
+                               'Good Luck!',
+                          font_size=45,
+                          halign='center')
 
         self.content = content
+        set_text_to_fit(content)
 
 
 class LastChancePopup(MyPopup):
-
     """Informs player this is their last turn."""
 
     def on_open(self):
@@ -1351,15 +1426,15 @@ class LastChancePopup(MyPopup):
 
         self.title = f'{current_player.name.title()}, this is your Last Chance!'
 
-        content = Label(text=f'{winner.name.title()} has {winner.total_score:,} points.\n\n'
-                             'Keep rolling to beat them!',
-                        font_size=60,
-                        halign='center')
+        content = MyLabel(text=f'{winner.name.title()} has {winner.total_score:,} points.\n'
+                               'Keep rolling to beat them!',
+                          font_size=45,
+                          halign='center')
         self.content = content
+        set_text_to_fit(content)
 
 
 class GameButtonRow(BoxLayout):
-
     """Box for holding game operation buttons. Inherits from Box Layout."""
 
     roll = ObjectProperty()
@@ -1370,8 +1445,11 @@ class GameButtonRow(BoxLayout):
 
 
 class RulesButton(Button):
+    """Launch RulesPopup.
 
-    """Launch RulesPopup. Inherits from Button."""
+    Inherits from Button.
+    Overrides on_release.
+    """
 
     def on_release(self) -> None:
         """Open RulesPopup."""
@@ -1380,7 +1458,6 @@ class RulesButton(Button):
 
 
 class KeepAll(Button):
-
     """Button for adding all dice to the keeper_box.
 
     Inherits from Button.
@@ -1400,7 +1477,6 @@ class KeepAll(Button):
 
 
 class Exit(Button):
-
     """Call ReallyExit popup to confirm user intention.
 
     Inherit from Button.
@@ -1414,7 +1490,6 @@ class Exit(Button):
 
 
 class EndTurn(Button):
-
     """Button to end player turn and move to next player.
 
     Inherits from Button.
@@ -1434,9 +1509,9 @@ class EndTurn(Button):
             popup.open()
         # check if points are still on the board.
         elif (base.die_basket.valid_basket == rgba(colors['valid']) and
-                ([die for die in base.active_game.choose_dice([die for die in base.dice.children
-                                                               if die not in base.die_basket.old_keepers])
-                    if die not in base.die_basket.keepers])):
+              ([die for die in base.active_game.choose_dice([die for die in base.dice.children
+                                                             if die not in base.die_basket.old_keepers])
+                if die not in base.die_basket.keepers])):
             popup = YouSurePopup()
             popup.open()
         # check for non-scoring dice in the keeper_box.
@@ -1451,7 +1526,6 @@ class EndTurn(Button):
 
 
 class Roll(Button):
-
     """Button to roll dice.
 
     Inherits from Button.
@@ -1503,6 +1577,7 @@ class Roll(Button):
             self.disabled = True
             self.color = [1, 1, 1, .3]
             self.parent.end_turn.text = 'END TURN'
+            set_text_to_fit(self.parent.end_turn)
 
         elif die_basket == rgba(colors['valid']):
             self.background_color = rgba(colors['prime dark'])
@@ -1512,11 +1587,12 @@ class Roll(Button):
             if (current_player.total_score + current_player.round_score +
                     self.parent.parent.current_player.basket_score) >= 500:
                 self.parent.end_turn.text = 'KEEP POINTS'
+                set_text_to_fit(self.parent.end_turn)
                 self.text = 'RISK \'N ROLL!'
+        set_text_to_fit(self)
 
 
 class Quit(Button):
-
     """Button to quit game."""
 
     def on_release(self) -> None:
@@ -1526,7 +1602,6 @@ class Quit(Button):
 
 
 class Base(FloatLayout):
-
     """A container for all gameplay and display objects. Inherits from FloatLayout."""
 
     list_o_players = deque()
@@ -1538,15 +1613,6 @@ class Base(FloatLayout):
     dice = ObjectProperty()
     info = ObjectProperty()
     score_area = ObjectProperty()
-
-    def get_active_game(self) -> None:
-        """Retrieve active game from PlayerNameScreen.
-
-        :return: active_game ObjectProperty.
-        """
-        name_screen = next(screen for screen in self.parent.parent.screens if screen.name == 'name')
-        self.active_game = name_screen.active_game
-        return self.active_game
 
     def get_active_game_players(self) -> deque:
         """Create list_o_players from active_game.player_list.
@@ -1614,30 +1680,49 @@ class Base(FloatLayout):
                 self.current_player.total_score +
                 self.current_player.round_score +
                 self.current_player.basket_score)
+            self.set_score_text_size()
         if score_type == 'round':
-            self.current_player.score_display.round.text = f'Round: {self.current_player.round_score:,}'
+            pass
+            # self.current_player.score_display.round.text = f'Round: {self.current_player.round_score:,}'
+            # self.set_score_text_size()
+
+    def set_score_text_size(self, *args) -> None:
+        min_font_size = 1000
+        for score in self.current_player.score_display.children:
+            set_text_to_fit(score)
+            if score.font_size < min_font_size:
+                min_font_size = score.font_size
+        for score in self.current_player.score_display.children:
+            score.font_size = min_font_size
+
+    def set_info_text_size(self, *args) -> None:
+        set_text_to_fit(self.current_player.info.children[0])
 
     def update_total_display(self) -> None:
         """Update player's total display in ScoreArea and InformationStation."""
         self.current_player.info.children[0].text = f'{self.current_player.total_score:,}'
         self.current_player.score_display.total.text = f'Total: {self.current_player.total_score:,}'
+        self.set_score_text_size()
+        self.set_info_text_size()
 
     def update_progress_display(self) -> None:
         """Update player's progress display in ScoreArea"""
         self.current_player.score_display.progress.text = f'{self.parent.turn} / {self.parent.turn_limit}'
+        self.set_score_text_size()
 
     def update_solo_total_display(self) -> None:
         """Update player's progress toward point_goal in InformationStation and total_plus in ScoreArea."""
         self.current_player.score_display.total_plus.text = 'Round + Total: {:,}'.format(
-                self.current_player.total_score +
-                self.current_player.round_score +
-                self.current_player.basket_score)
+            self.current_player.total_score +
+            self.current_player.round_score +
+            self.current_player.basket_score)
         self.current_player.info.children[0].text = \
             f'{self.current_player.total_score:,} / \n{self.parent.point_goal:,}'
+        self.set_score_text_size()
+        self.set_info_text_size()
 
 
 class DieBasket(FloatLayout):
-
     """Container for scoring dice.
 
     Dice colliding with die_basket are added to keepers.
@@ -1686,7 +1771,6 @@ class DieBasket(FloatLayout):
 
 
 class PlayerNumDropDown(DropDown):
-
     """A drop down menu for selecting number of players.
 
     Inherits from DropDown.
@@ -1704,7 +1788,6 @@ class PlayerNumDropDown(DropDown):
 
 
 class PointGoal(DropDown):
-
     """Menu for selecting game's ending score. Inherits from DropDown."""
 
     def select(self, data: int) -> None:
@@ -1716,10 +1799,10 @@ class PointGoal(DropDown):
         goal_screen.point_goal = data
         if goal_screen.turn_limit:
             goal_screen.cont.disabled = False
+            set_text_to_fit(goal_screen.cont)
 
 
 class TurnLimit(DropDown):
-
     """Menu for setting maximum turns allowed in game. Inherits from DropDown."""
 
     def select(self, data: int) -> None:
@@ -1731,10 +1814,10 @@ class TurnLimit(DropDown):
         goal_screen.turn_limit = data
         if goal_screen.point_goal:
             goal_screen.cont.disabled = False
+            set_text_to_fit(goal_screen.cont)
 
 
 class SoloGoalScreen(Screen):
-
     """Screen for choosing point_goal and turn_limit for challenge mode.
 
     Inherits from Screen.
@@ -1746,6 +1829,7 @@ class SoloGoalScreen(Screen):
 
     def on_enter(self) -> None:
         """Set up screen with labels, buttons and drop-down menus."""
+
         # continue button disabled until both point_goal and turn_limit set.
         self.cont.disabled = True
         intro_label = Label(text='Set up your own game for a customized challenge!',
@@ -1754,6 +1838,7 @@ class SoloGoalScreen(Screen):
                             pos_hint={'x': .2, 'y': .825},
                             size_hint=(.6, .1))
         self.add_widget(intro_label)
+
         # construct drop-down menus.
         # make the button containing the drop-down.
         point_button = Button(text='SET POINTS GOAL',
@@ -1770,7 +1855,7 @@ class SoloGoalScreen(Screen):
             btn = Button(text=f'{x:,}',
                          id=str(x),
                          size_hint_y=None,
-                         height=110,
+                         height=Window.height / 12.5,
                          background_normal='',
                          background_color=rgba(colors['second']))
             # bind the btn press to the drop-down's select method and pass the btn id.
@@ -1791,12 +1876,13 @@ class SoloGoalScreen(Screen):
         for x in [5, 10, 15, 20, 30]:
             btn = Button(text=str(x),
                          size_hint_y=None,
-                         height=110,
+                         height=Window.height / 12.5,
                          background_normal='',
                          background_color=rgba(colors['second']))
             btn.bind(on_release=lambda button: turn_drop.select(int(button.text)))
             turn_drop.add_widget(btn)
         turn_button.bind(on_release=turn_drop.open)
+        Clock.schedule_once(self.set_text_size, .05)
 
     def on_point_goal(self, *args: list) -> None:
         """Update point_goal label with point_goal data.
@@ -1804,6 +1890,7 @@ class SoloGoalScreen(Screen):
         :param args: Unused.
         """
         self.goals.points.text = f'Points goal: {self.point_goal:,}'
+        set_text_to_fit(self.goals.points)
         if self.turn_limit and self.point_goal:
             self.set_difficulty()
 
@@ -1813,6 +1900,7 @@ class SoloGoalScreen(Screen):
         :param args: Unused.
         """
         self.goals.turns.text = f'Turn limit: {self.turn_limit}'
+        set_text_to_fit(self.goals.turns)
         if self.point_goal and self.turn_limit:
             self.set_difficulty()
 
@@ -1833,6 +1921,7 @@ class SoloGoalScreen(Screen):
         elif points_per_turn > 750:
             diff = 'Difficulty: Possible'
         self.goals.diff.text = diff
+        set_text_to_fit(self.goals.diff)
 
     def to_menu_screen(self) -> None:
         """Reset PlayerNumberScreen stuff and go to menu screen."""
@@ -1843,17 +1932,21 @@ class SoloGoalScreen(Screen):
         self.goals.points.text = 'Points goal:'
         self.goals.turns.text = 'Turn limit:'
         self.parent.current = 'menu'
+        self.set_text_size()
+
+    def set_text_size(self, *args) -> None:
+        for widget in self.children:
+            if isinstance(widget, (Label, Button)):
+                set_text_to_fit(widget)
 
 
 class SoloPLayerScore(BoxLayout):
-
     """Container for single player score information."""
 
     pass
 
 
 class SoloGameScreen(Screen):
-
     """Screen for playing challenge mode.
 
     Inherits from Screen.
@@ -1872,7 +1965,6 @@ class SoloGameScreen(Screen):
 
         :param args: Unused.
         """
-        self.base.get_active_game()
         self.base.get_active_game_players()
 
         goal_screen = next(screen for screen in self.parent.screens if screen.name == 'goal')
@@ -1894,6 +1986,7 @@ class SoloGameScreen(Screen):
         player.score_display = player_score
 
         self.base.score_area.add_widget(player.score_display)
+        Clock.schedule_once(self.base.set_score_text_size, .0001)
         self.next_round()
 
     def next_round(self, *args: list) -> None:
@@ -1903,7 +1996,9 @@ class SoloGameScreen(Screen):
         self.base.die_basket.valid_basket = rgba(colors['valid'])
         self.base.buttons.roll.update_color()
         self.base.buttons.roll.text = 'ROLL \'EM!'
+        set_text_to_fit(self.base.buttons.roll)
         self.base.buttons.end_turn.text = 'END TURN'
+        set_text_to_fit(self.base.buttons.end_turn)
         self.base.current_player.round_score = 0
         self.base.die_basket.keepers.clear()
         self.base.die_basket.old_keepers.clear()
@@ -1935,7 +2030,6 @@ class SoloGameScreen(Screen):
 
 
 class Screens(ScreenManager):
-
     """Manages available screens. Inherits from ScreenManager"""
 
     def __init__(self, **kwargs) -> None:
@@ -1953,11 +2047,13 @@ class Screens(ScreenManager):
         self.add_widget(GameScreen(name='game'))
         self.add_widget(ResultsScreen(name='results'))
 
+        Clock.schedule_once(self.to_menu_screen, .5)
+
+    def to_menu_screen(self):
         self.current = 'menu'
 
 
 class GameApp(App):
-
     """Base class with main loop internals."""
 
     def build(self):

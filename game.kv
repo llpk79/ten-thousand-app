@@ -39,9 +39,17 @@ ScreenManager:
         name: 'results'
         manager: 'screen_manager'
 
-<MyButton@Button>:
+<MyLabel>:
+    padding: (6, 6)
+#    text_size: self.size
+    texture_size: root.width, root.height
+
+<MyButton>:
     color: rgba(colors['text'])
     font_size: 75
+    padding: (12, 12)
+#    text_size: self.width, None
+    texture_size: self.width, self.height
     background_normal: ''
     background_color: rgba(colors['prime dark'])
 
@@ -50,6 +58,9 @@ ScreenManager:
     color: rgba(colors['text'])
     font_size: 75
     size_hint: .35, .1
+    padding: (6, 6)
+    text_size: None, None
+    texture_size: self.width, self.height
     pos_hint: {'x': .325, 'y': 0.6}
     background_normal: ''
     background_color: rgba(colors['prime dark'])
@@ -59,6 +70,9 @@ ScreenManager:
     color: rgba(colors['text'])
     font_size: 75
     size_hint: .35, .1
+    padding: (6, 6)
+    text_size: None, None
+    texture_size: self.width, self.height
     pos_hint: {'x': .325, 'y': .4}
     background_normal: ''
     background_color: rgba(colors['prime dark'])
@@ -68,6 +82,9 @@ ScreenManager:
     color: rgba(colors['text'])
     font_size: 75
     size_hint: .35, .1
+    padding: (6, 6)
+    text_size: None, None
+    texture_size: self.width, self.height
     pos_hint: {'x': .325, 'y': .2}
     background_normal: ''
     background_color: rgba(colors['prime dark'])
@@ -77,6 +94,9 @@ ScreenManager:
     color: rgba(colors['text'])
     font_size: 75
     size_hint: (.1, .075)
+    padding: (6, 6)
+    text_size: None, None
+    texture_size: self.width, self.height
     pos_hint: {'x': .05, 'y': .05}
     background_normal: ''
     background_color: rgba(colors['prime dark'])
@@ -87,6 +107,9 @@ ScreenManager:
     font_size: 75
     pos_hint: {'x': .05, 'y': .05}
     size_hint: .1, .075
+    padding: (6, 6)
+    text_size: None, None
+    texture_size: self.width, self.height
     background_normal: ''
     background_color: rgba(colors['prime dark'])
 
@@ -97,7 +120,9 @@ ScreenManager:
 
 <MenuScreen>:
     name: 'menu'
+    background: background
     Background:
+        id: background
     Label:
         text: 'Welcome to Ten Thousand!'
         halign: 'center'
@@ -105,6 +130,9 @@ ScreenManager:
         font_size: 100
         size_hint: .4, .1
         pos_hint: {'x': .3, 'y': .8}
+        padding: (6, 6)
+        text_size: None, None
+        texture_size: self.width, self.height
     Label:
         text: 'A dice game'
         halign: 'center'
@@ -112,6 +140,9 @@ ScreenManager:
         font_size: 40
         size_hint: .2, .1
         pos_hint: {'x': .4, 'y': .725}
+        padding: (6, 6)
+        text_size: None, None
+        texture_size: self.width, self.height
     FriendsButton:
     MyOwnSelfButton:
     SoloGameButton:
@@ -150,6 +181,9 @@ ScreenManager:
         font_size: 100
         size_hint: (.275, .075)
         pos_hint: {'x': .35, 'y': .8}
+        padding: (6, 6)
+#        text_size: None, None
+        texture_size: self.width, self.height
     Label:
         id: num_label
         text: 'Players Selected: '
@@ -157,6 +191,9 @@ ScreenManager:
         font_size: 75
         size_hint: .2, .1
         pos_hint: {'x': .4, 'y': .15}
+        padding: (6, 6)
+#        text_size: None, None
+        texture_size: self.width, self.height
     MyButton:
         id: cont
         text: 'CONTINUE'
@@ -181,9 +218,13 @@ ScreenManager:
             size: self.width, self.x + 4
     Label:
         text: 'Drag Dice To Line Or Double Tap To Score'
-        font_size: 40
+        font_size: 50
         halign: 'center'
-        pos_hint: {'x': self.x, 'y': -0.425}
+        size_hint: .5, .1
+        pos_hint: {'x': .25, 'y': 0}
+        padding: (6, 6)
+        text_size: None, None
+        texture_size: self.width, self.height
     BoxLayout:
         id: keeper_box
         pos_hint: {'x': .05, 'y': 0.125}
@@ -213,7 +254,9 @@ ScreenManager:
     total_plus: total_plus
     PlayerArea:
         id: name
-        text_size: self.width, None
+#        padding: (6, 6)
+        text_size: None, None
+#        texture_size: self.width, self.height
         size_hint: .275, 1
         shorten: True
         shorten_from: 'right'
@@ -226,18 +269,30 @@ ScreenManager:
         halign: 'left'
         text: 'Round: 0'
         font_size: 60
+        padding: (6, 6)
+        text_size: None, None
+        texture_size: self.width, self.height
     PlayerArea:
         id: total
         size_hint: .2, 1
         halign: 'left'
         text: 'Total: 0'
         font_size: 60
+        padding: (6, 6)
+        text_size: None, None
+        texture_size: self.width, self.height
+
     PlayerArea:
         id: total_plus
+        text: 'Round + Total: 0'
         size_hint: .325, 1
         halign: 'left'
         font_size: 60
-        text: 'Round + Total: 0'
+        padding: (6, 6)
+        text_size: None, None
+        texture_size: self.width, self.height
+
+<InfoHolder@BoxLayout>:
 
 <InformationStation>:
     box: box
@@ -256,6 +311,9 @@ ScreenManager:
         font_size: 75
         size_hint: .95, .1
         pos_hint: {'x': .025, 'y': .875}
+        padding: (6, 6)
+        text_size: None, None
+        texture_size: self.width, self.height
         canvas.before:
             Color:
                 rgba: rgba(colors['second light'])
@@ -267,6 +325,12 @@ ScreenManager:
         size_hint: 1, .6
         pos_hint: {'x': .05, 'y': .2}
         orientation: 'vertical'
+        InfoHolder
+        InfoHolder
+        InfoHolder
+        InfoHolder
+        InfoHolder
+        InfoHolder
     RulesButton:
     Quit:
 
@@ -284,6 +348,9 @@ ScreenManager:
     background_color: rgba(colors['prime dark'])
     size_hint: .45, .1
     pos_hint: {'x': .525, 'y': .025}
+    padding: (6, 6)
+    text_size: None, None
+    texture_size: self.width, self.height
 
 <Roll>:
     text: 'ROLL \'EM!'
@@ -291,6 +358,9 @@ ScreenManager:
     font_size: 90
     background_normal: ''
     background_color: rgba(colors['prime dark'])
+    padding: (6, 6)
+    text_size: None, None
+    texture_size: self.width, self.height
 
 <EndTurn>:
     text: 'END TURN'
@@ -299,6 +369,9 @@ ScreenManager:
     font_size: 90
     background_normal: ''
     background_color: rgba(colors['prime dark'])
+    padding: (6, 6)
+    text_size: None, None
+    texture_size: self.width, self.height
 
 <KeepAll>:
     text: 'SELECT ALL'
@@ -306,6 +379,9 @@ ScreenManager:
     font_size: 90
     background_normal: ''
     background_color: rgba(colors['prime dark'])
+    padding: (6, 6)
+    text_size: None, None
+    texture_size: self.width, self.height
 
 <RulesButton>:
     text: 'RULES'
@@ -315,6 +391,9 @@ ScreenManager:
     background_color: rgba(colors['prime dark'])
     size_hint: .45, .1
     pos_hint: {'x': .025, 'y': .025}
+    padding: (6, 6)
+    text_size: None, None
+    texture_size: self.width, self.height
 
 <GameButtonRow>:
     size_hint: .7, .15
@@ -374,22 +453,34 @@ ScreenManager:
         spacing: 5
         Label:
             id: points
-            font_size: 75
+            font_size: 45
             halign: 'left'
             text: 'Points goal:'
+            padding: (12, 12)
+            text_size: None, None
+#            texture_size: self.width, self.height
         Label
             id: turns
-            font_size: 75
+            font_size: 45
             text: 'Turn limit:'
+            padding: (30, 30)
+            text_size: None, None
+#            texture_size: self.width, self.height
         Label
             id: diff
-            font_size: 75
+            font_size: 45
             text: 'Difficulty:'
+            padding: (50, 50)
+            text_size: None, None
+#            texture_size: self.width, self.height
     MyButton:
         id: cont
         text: 'CONTINUE'
         size_hint: .2, .1
         pos_hint: {'x': .4, 'y': .05}
+        padding: (6, 6)
+        text_size: None, None
+        texture_size: self.width, self.height
         on_release: root.parent.current = 'name'
         disabled: True
     BackButton:
@@ -407,18 +498,30 @@ ScreenManager:
         shorten: True
         shorten_from: 'right'
         halign: 'center'
+#        padding: (6, 6)
+#        text_size: None, None
+#        texture_size: self.width, self.height
     PlayerArea:
         id: round
         size_hint: .3, 1
         halign: 'left'
+        padding: (6, 6)
+        text_size: None, None
+        texture_size: self.width, self.height
     PlayerArea:
         id: total_plus
         size_hint: .5, 1
         halign: 'left'
+        padding: (6, 6)
+        text_size: None, None
+        texture_size: self.width, self.height
     PlayerArea:
         id: progress
         size_hint: .3, 1
         halign: 'left'
+        padding: (6, 6)
+        text_size: None, None
+        texture_size: self.width, self.height
 
 <SoloGameScreen>:
     name: 'solo'
