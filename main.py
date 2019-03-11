@@ -144,13 +144,19 @@ class PlayerNumberScreen(Screen):
         if not self.num_players:
             self.cont.disabled = True
 
+        Clock.schedule_once(self.setup_buttons, .01)
+        Clock.schedule_once(self.set_text_size, .05)
+
+    def set_text_size(self, *args) -> None:
+        for widget in self.children:
+            set_text_to_fit(widget)
+
+    def setup_buttons(self, *args) -> None:
         # Make a player_num_button.
-        player_num_button = Button(text='SET NUMBER OF PLAYERS',
-                                   font_size=75,
-                                   size_hint=(.4, .1),
-                                   pos_hint={'x': .3, 'y': .65},
-                                   background_normal='',
-                                   background_color=rgba(colors['prime dark']))
+        player_num_button = MyButton(text='SET NUMBER OF PLAYERS',
+                                     font_size=75,
+                                     size_hint=(.4, .1),
+                                     pos_hint={'x': .3, 'y': .65})
         self.add_widget(player_num_button)
 
         # Make a drop-down to add to the player_num_button.
@@ -170,15 +176,13 @@ class PlayerNumberScreen(Screen):
         # Finally, open the num_drop drop-down with the player_num_button.
         player_num_button.bind(on_release=num_drop.open)
 
-        add_comp_player = Button(text='COMPUTER FRIEND: N0',
-                                 id='compy',
-                                 font_size=75,
-                                 size_hint=(.4, .1),
-                                 pos_hint={'x': .3, 'y': .45},
-                                 background_normal='',
-                                 background_color=rgba(colors['prime dark']),
-                                 on_release=self.set_game_mode)
+        add_comp_player = MyButton(text='COMPUTER FRIEND: NO',
+                                   id='compy',
+                                   font_size=75,
+                                   size_hint=(.4, .1),
+                                   pos_hint={'x': .3, 'y': .45})
         self.add_widget(add_comp_player)
+        add_comp_player.bind(on_release=self.set_game_mode)
 
     def on_num_players(self, screen: Screen, num_players: int) -> None:
         """Check num_players is non_zero -> set self.num_players, call set_label
@@ -198,8 +202,11 @@ class PlayerNumberScreen(Screen):
         add_comp_player_button = next(child for child in self.children if child.id == 'compy')
         if self.game_mode == 'comp':
             add_comp_player_button.text = 'COMPUTER FRIEND: YES'
-        elif game_mode == 'game':
+            set_text_to_fit(add_comp_player_button)
+
+        elif self.game_mode == 'game':
             add_comp_player_button.text = 'COMPUTER FRIEND: NO'
+            set_text_to_fit(add_comp_player_button)
 
     def set_game_mode(self, *args: list) -> None:
         """Set PlayerNameScreen.game_mode.
@@ -290,12 +297,12 @@ class PlayerNameScreen(Screen):
                 text = f'Enter Player {i}\'s name:'
                 position = {'x': .165, 'y': .715 + (self.num_players / 30) - (i * .135)}
 
-            label = Label(text=text,
-                          font_size=75,
-                          color=rgba(colors['text']),
-                          pos_hint=position,
-                          size_hint=(.25, .1),
-                          id=str(i))
+            label = MyLabel(text=text,
+                            font_size=75,
+                            color=rgba(colors['text']),
+                            pos_hint=position,
+                            size_hint=(.25, .1),
+                            id=str(i))
             self.add_widget(label)
 
             input_name = (FocusInput(pos_hint={'x': .475, 'y': .715 + (self.num_players / 30) - (i * .135)}))
@@ -653,14 +660,16 @@ class ResultsScreen(Screen):
 
         :param args: Unused.
         """
-        self.add_widget(Label(id='message',
-                              text=self.message,
-                              color=rgba(colors['text']),
-                              halign='center',
-                              font_size=90,
-                              bold=True,
-                              size_hint=(.5, .5),
-                              pos_hint={'x': .25, 'y': .35}))
+        label = MyLabel(id='message',
+                        text=self.message,
+                        color=rgba(colors['text']),
+                        halign='center',
+                        font_size=90,
+                        bold=True,
+                        size_hint=(.5, .5),
+                        pos_hint={'x': .25, 'y': .35})
+        self.add_widget(label)
+        set_text_to_fit(label)
 
     def to_main_menu(self) -> None:
         """Iterate through screens calling reset method for each screen."""
@@ -1093,15 +1102,15 @@ class RulesPopup(MyPopup):
 
         self.title = 'How To Play'
 
-        label = Label(text=msg1,
-                      font_size=40,
-                      halign='center',
-                      pos_hint={'x': 0, 'y': .45})
-        label2 = Label(text=msg2,
-                       font_size=35,
-                       halign='left',
-                       size_hint=(1, .6),
-                       pos_hint={'x': 0, 'y': .2})
+        label = MyLabel(text=msg1,
+                        font_size=40,
+                        halign='center',
+                        pos_hint={'x': 0, 'y': .45})
+        label2 = MyLabel(text=msg2,
+                         font_size=35,
+                         halign='left',
+                         size_hint=(1, .6),
+                         pos_hint={'x': 0, 'y': .2})
         container = FloatLayout()
         container.add_widget(label2)
         container.add_widget(label)
@@ -1487,6 +1496,16 @@ class Exit(Button):
         """Open confirmation popup."""
         popup = ReallyExit()
         popup.open()
+
+
+class MyLabel(Label):
+    def __init__(self, **kwargs):
+        super(MyLabel, self).__init__(**kwargs)
+
+
+class MyButton(Button):
+    def __init__(self, **kwargs):
+        super(MyButton, self).__init__(**kwargs)
 
 
 class EndTurn(Button):

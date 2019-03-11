@@ -199,7 +199,10 @@ ScreenManager:
         text: 'CONTINUE'
         size_hint: .2, .1
         pos_hint: {'x': .4, 'y': .05}
-        on_release: root.parent.current = 'name'
+        padding: (6, 6)
+        text_size: None, None
+        texture_size: self.width, self.height
+        on_release: root.to_name_screen()
         disabled: True
     BackButton:
         on_release: root.to_menu_screen()
