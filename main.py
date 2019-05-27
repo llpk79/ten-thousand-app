@@ -62,9 +62,9 @@ class MenuScreen(Screen):
         for widget in self.children:
             set_text_to_fit(widget)
 
-    def on_enter(self) -> None:
+    def on_pre_enter(self) -> None:
         """Call set_text_size when entering screen."""
-        self.set_text_size()
+        Clock.schedule_once(self.set_text_size, .05)
 
 
 class FriendsButton(Button):
@@ -168,7 +168,7 @@ class PlayerNumberScreen(Screen):
                          height=Window.height / 10,
                          background_normal='',
                          background_color=rgba(colors['second']))
-            # Use the id number to set the number of players.
+            # Use the button id number to set the number of players.
             btn.bind(on_release=lambda button: num_drop.select(int(button.id)))
             # Add buttons to our drop-down.
             num_drop.add_widget(btn)
@@ -215,13 +215,15 @@ class PlayerNumberScreen(Screen):
         """
         if self.game_mode == 'comp':
             self.game_mode = 'game'
+            self.num_players -= 1
         elif self.game_mode == 'game':
             self.game_mode = 'comp'
+            self.num_players += 1
         self.set_btn_text(self.game_mode)
 
     def set_label(self) -> None:
         """Set num_label text and enable cont button."""
-        texts = {1: 'ONE', 2: 'TWO', 3: 'THREE', 4: 'FOUR', 5: 'FIVE'}
+        texts = {1: 'ONE', 2: 'TWO', 3: 'THREE', 4: 'FOUR', 5: 'FIVE', 6: 'SIX'}
         self.num_label.text = f'Players Selected: {texts[self.num_players]}'
         set_text_to_fit(self.num_label)
         self.cont.disabled = False
@@ -229,10 +231,8 @@ class PlayerNumberScreen(Screen):
 
     def to_name_screen(self) -> None:
         name_screen = next(screen for screen in self.parent.screens if screen.name == 'name')
-        if self.game_mode == 'game':
-            name_screen.num_players = self.num_players
-        else:
-            name_screen.num_players = self.num_players
+        name_screen.num_players = self.num_players
+        name_screen.game_mode = self.game_mode
         self.parent.current = 'name'
 
     def to_menu_screen(self) -> None:
@@ -259,7 +259,7 @@ class FocusInput(TextInput):
         super(FocusInput, self).__init__(**kwargs)
 
         self.multiline = False
-        self.font_size = self.height * .425
+        self.font_size = Window.height * .05
         self.write_tab = False
         self.size_hint = (.35, .09)
 
@@ -290,18 +290,20 @@ class PlayerNameScreen(Screen):
         # Place a label and input_name text-box for each player.
         for i in range(1, self.num_players + 1):
             if self.game_mode == 'comp' and i == self.num_players:
-                text = 'Enter Computer Player Name:'
+                text = 'Enter Computer Player\'s Name:'
                 # Position above the keyboard and move upward slightly with more players. Place subsequent rows below.
                 position = {'x': .145, 'y': .715 + (self.num_players / 30) - (i * .135)}
+                size_hint_y = .1175
             else:
                 text = f'Enter Player {i}\'s name:'
                 position = {'x': .165, 'y': .715 + (self.num_players / 30) - (i * .135)}
+                size_hint_y = .1
 
             label = MyLabel(text=text,
                             font_size=75,
                             color=rgba(colors['text']),
                             pos_hint=position,
-                            size_hint=(.25, .1),
+                            size_hint=(.25, size_hint_y),
                             id=str(i))
             self.add_widget(label)
 
@@ -358,6 +360,7 @@ class PlayerNameScreen(Screen):
         number_screen = next(screen for screen in self.parent.screens if screen.name == 'number')
         number_screen.num_label.text = 'Players Selected: '
         number_screen.cont.disabled = True
+        number_screen.game_mode = 'game'
         number_screen.num_players = 0
 
     def to_prev_screen(self) -> None:
@@ -395,7 +398,7 @@ class GameScreen(Screen):
 
     base = ObjectProperty()
 
-    def on_enter(self, *args: list) -> None:
+    def on_pre_enter(self, *args: list) -> None:
         """Set up screen for start of game.
 
         Call get_active_game and get_active_game_players. Instantiate PlayerScore widgets.
@@ -414,6 +417,18 @@ class GameScreen(Screen):
         first_player = self.base.list_o_players[0].score_display
         self.base.score_area.add_widget(first_player)
         self.next_round()
+
+    def on_enter(self):
+        self.set_screen_text_sizes(self.base)
+
+    def set_screen_text_sizes(self, base, *args):
+        for widget in base.children:
+            if widget.id == 'indi':
+                continue
+            if isinstance(widget, (Label, Button)):
+                set_text_to_fit(widget)
+            if widget.children:
+                self.set_screen_text_sizes(widget)
 
     def open_first_popup(self, player):
         popup = FirstTurnPopup()
@@ -440,7 +455,7 @@ class GameScreen(Screen):
 
             self.base.list_o_players.append(temp)
 
-            Clock.schedule_once(self.animate_indicator, .01)
+            Clock.schedule_once(self.animate_indicator, 1)
             Clock.schedule_once(self.base.set_score_text_size, .0001)
             return None
 
@@ -681,7 +696,7 @@ class ResultsScreen(Screen):
                 self.reset_name_screen(screen)
 
             if screen.name == 'game':
-                self.reset_game_screen(screen)
+                self.reset_game_screen(screen, play_again=False)
 
             if screen.name == 'goal':
                 self.reset_goal_screen(screen)
@@ -741,21 +756,23 @@ class ResultsScreen(Screen):
         name_screen.clear_widgets(name_screen.children[:-2])
         name_screen.num_players = 0
 
-    def reset_game_screen(self, game_screen: Screen) -> None:
+    def reset_game_screen(self, game_screen: Screen, play_again: bool=True) -> None:
         """Reset GameScreen widgets.
 
         :param game_screen: GameScreen instance.
         """
-        game_screen.base.info.box.clear_widgets()
+        for box in game_screen.base.info.box.children:
+            box.clear_widgets()
 
         if game_screen.base.info.children[0].id == 'indi':
             game_screen.base.info.remove_widget(game_screen.base.info.children[0])
 
         game_screen.base.score_area.clear_widgets()
-        game_screen.base.list_o_players.clear()
         game_screen.base.list_o_winners.clear()
         game_screen.base.current_player = ObjectProperty()
-        game_screen.base.active_game = ObjectProperty()
+        if not play_again:
+            game_screen.base.active_game = ObjectProperty()
+            game_screen.base.list_o_players.clear()
 
     def reset_goal_screen(self, goal_screen: Screen) -> None:
         """Reset GoalScreen variables and labels.
@@ -1293,7 +1310,7 @@ class ReallyQuit(MyPopup):
                 results.reset_name_screen(screen)
 
             if screen.name == 'game':
-                results.reset_game_screen(screen)
+                results.reset_game_screen(screen, play_again=False)
 
             if screen.name == 'goal':
                 results.reset_goal_screen(screen)
