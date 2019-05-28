@@ -119,6 +119,7 @@ class SoloGameButton(Button):
         number_screen.num_players = 1
         name_screen = next(screen for screen in screens if screen.name == 'name')
         name_screen.game_mode = 'solo'
+        name_screen.num_players = 1
         Clock.schedule_once(self.to_goal_screen, .2)
 
     def to_goal_screen(self, *args: list) -> None:
@@ -580,7 +581,6 @@ class GameScreen(Screen):
         self.base.die_basket.keepers.clear()
         self.base.die_basket.old_keepers.clear()
         self.base.dice.remove_dice(self.base.dice.children)
-        self.base.update_display('name')
         self.base.update_display('total')
         self.base.update_display('round')
         self.base.update_display('basket')
@@ -702,7 +702,7 @@ class ResultsScreen(Screen):
                 self.reset_goal_screen(screen)
 
             if screen.name == 'solo':
-                self.reset_solo_screen(screen)
+                self.reset_solo_screen(screen, play_again=False)
 
             if screen.name == 'results':
                 self.reset_results_screen(screen)
@@ -718,6 +718,7 @@ class ResultsScreen(Screen):
             player.total_score = 0
             player.round_score = 0
             player.basket_score = 0
+            player.first_turn = True
 
     def play_again(self) -> None:
         """Reset player scores and return to appropriate game screen."""
@@ -730,8 +731,8 @@ class ResultsScreen(Screen):
 
         else:
             self.reset_player_scores(game_screen)
+            self.reset_game_screen(game_screen)
 
-        self.reset_game_screen(game_screen)
         self.parent.current = self.game_mode
         self.reset_results_screen(self)
 
@@ -756,9 +757,10 @@ class ResultsScreen(Screen):
         name_screen.clear_widgets(name_screen.children[:-2])
         name_screen.num_players = 0
 
-    def reset_game_screen(self, game_screen: Screen, play_again: bool=True) -> None:
+    def reset_game_screen(self, game_screen: Screen, play_again: bool = True) -> None:
         """Reset GameScreen widgets.
 
+        :param play_again: Keep active game and players if true.
         :param game_screen: GameScreen instance.
         """
         for box in game_screen.base.info.box.children:
@@ -784,16 +786,22 @@ class ResultsScreen(Screen):
         goal_screen.goals.diff.text = 'Difficulty:'
         set_text_to_fit(goal_screen.goals.diff)
 
-    def reset_solo_screen(self, solo_screen: Screen) -> None:
+    def reset_solo_screen(self, solo_screen: Screen, play_again: bool = True) -> None:
         """Reset SoloGameScreen widgets and variables.
 
+        :param play_again: Keep point goal and turn limits.
         :param solo_screen: SoloGameScreen instance.
         """
-        solo_screen.base.info.box.clear_widgets()
+        for box in solo_screen.base.info.box.children:
+            box.clear_widgets()
+
+        solo_screen.current_player = ObjectProperty()
+        solo_screen.base.list_o_players.clear()
         solo_screen.base.score_area.clear_widgets()
         solo_screen.turn = 0
-        solo_screen.point_goal = 0
-        solo_screen.turn_limit = 0
+        if not play_again:
+            solo_screen.point_goal = 0
+            solo_screen.turn_limit = 0
 
     def reset_results_screen(self, results_screen: Screen) -> None:
         """Reset ResultsScreen message.
@@ -1037,8 +1045,8 @@ class InformationStation(FloatLayout):
         base = self.parent
         info_holders = [holder for holder in reversed(self.box.children)]
         for holder in info_holders:
-            if holder.children:
-                holder.children.clear()
+            # if holder.children:
+            holder.clear_widgets()
         for player in base.list_o_players:
             lil_box = BoxLayout(id=player.name)
             turn_indicator_holder = Widget(id='turn',
@@ -1316,7 +1324,7 @@ class ReallyQuit(MyPopup):
                 results.reset_goal_screen(screen)
 
             if screen.name == 'solo':
-                results.reset_solo_screen(screen)
+                results.reset_solo_screen(screen, play_again=False)
 
         screen_manager.current = 'menu'
 
@@ -1718,9 +1726,9 @@ class Base(FloatLayout):
                 self.current_player.basket_score)
             self.set_score_text_size()
         if score_type == 'round':
-            pass
-            # self.current_player.score_display.round.text = f'Round: {self.current_player.round_score:,}'
-            # self.set_score_text_size()
+            # pass
+            self.current_player.score_display.round.text = f'Round: {self.current_player.round_score:,}'
+            self.set_score_text_size()
 
     def set_score_text_size(self, *args) -> None:
         min_font_size = 1000
@@ -1863,7 +1871,7 @@ class SoloGoalScreen(Screen):
     point_goal = NumericProperty()
     turn_limit = NumericProperty()
 
-    def on_enter(self) -> None:
+    def on_pre_enter(self) -> None:
         """Set up screen with labels, buttons and drop-down menus."""
 
         # continue button disabled until both point_goal and turn_limit set.
@@ -1927,6 +1935,9 @@ class SoloGoalScreen(Screen):
         """
         self.goals.points.text = f'Points goal: {self.point_goal:,}'
         set_text_to_fit(self.goals.points)
+        if self.parent:
+            solo_game = [screen for screen in self.parent.screens if screen.name == 'solo'][0]
+            solo_game.point_goal = int(self.point_goal)
         if self.turn_limit and self.point_goal:
             self.set_difficulty()
 
@@ -1937,6 +1948,9 @@ class SoloGoalScreen(Screen):
         """
         self.goals.turns.text = f'Turn limit: {self.turn_limit}'
         set_text_to_fit(self.goals.turns)
+        if self.parent:
+            solo_game = [screen for screen in self.parent.screens if screen.name == 'solo'][0]
+            solo_game.turn_limit = int(self.turn_limit)
         if self.point_goal and self.turn_limit:
             self.set_difficulty()
 
@@ -1986,7 +2000,7 @@ class SoloGameScreen(Screen):
     """Screen for playing challenge mode.
 
     Inherits from Screen.
-    Overrides on_enter.
+    Overrides on_pre_enter.
     """
 
     base = ObjectProperty()
@@ -1994,7 +2008,7 @@ class SoloGameScreen(Screen):
     point_goal = NumericProperty()
     turn_limit = NumericProperty()
 
-    def on_enter(self, *args: list) -> None:
+    def on_pre_enter(self, *args: list) -> None:
         """Set up screen to play challenge mode.
 
         Get game and player. Add players' score_display. Get the game started by calling next_round.
@@ -2002,10 +2016,6 @@ class SoloGameScreen(Screen):
         :param args: Unused.
         """
         self.base.get_active_game_players()
-
-        goal_screen = next(screen for screen in self.parent.screens if screen.name == 'goal')
-        self.point_goal = goal_screen.point_goal
-        self.turn_limit = goal_screen.turn_limit
 
         player = self.base.list_o_players[0]
         self.base.current_player = player
@@ -2025,6 +2035,16 @@ class SoloGameScreen(Screen):
         Clock.schedule_once(self.base.set_score_text_size, .0001)
         self.next_round()
 
+    def on_enter(self):
+        self.set_screen_text_sizes(self.base)
+
+    def set_screen_text_sizes(self, base, *args):
+        for widget in base.children:
+            if isinstance(widget, (Label, Button)):
+                set_text_to_fit(widget)
+            if widget.children:
+                self.set_screen_text_sizes(widget)
+
     def next_round(self, *args: list) -> None:
         """Reset all base variables and widgets to initial state, check game status, increment turn."""
         self.base.update_round_score(green_line=True)
@@ -2042,6 +2062,7 @@ class SoloGameScreen(Screen):
         self.base.update_display('round')
         self.base.update_display('progress')
         self.base.update_display('solo total')
+        self.base.update_display('basket')
 
         if self.base.current_player.total_score >= self.point_goal or self.turn > self.turn_limit:
             if self.base.current_player.total_score >= self.point_goal:
