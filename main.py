@@ -294,17 +294,15 @@ class PlayerNameScreen(Screen):
                 text = 'Enter Computer Player\'s Name:'
                 # Position above the keyboard and move upward slightly with more players. Place subsequent rows below.
                 position = {'x': .145, 'y': .715 + (self.num_players / 30) - (i * .135)}
-                size_hint_y = .1175
             else:
                 text = f'Enter Player {i}\'s name:'
                 position = {'x': .165, 'y': .715 + (self.num_players / 30) - (i * .135)}
-                size_hint_y = .1
 
             label = MyLabel(text=text,
                             font_size=75,
                             color=rgba(colors['text']),
                             pos_hint=position,
-                            size_hint=(.25, size_hint_y),
+                            size_hint=(.25, .1),
                             id=str(i))
             self.add_widget(label)
 
