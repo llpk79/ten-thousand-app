@@ -761,16 +761,20 @@ class ResultsScreen(Screen):
         :param play_again: Keep active game and players if true.
         :param game_screen: GameScreen instance.
         """
+        game_screen.reset_round()
         for box in game_screen.base.info.box.children:
             box.clear_widgets()
 
         if game_screen.base.info.children[0].id == 'indi':
             game_screen.base.info.remove_widget(game_screen.base.info.children[0])
 
-        game_screen.base.dice.remove_dice(game_screen.base.dice.children)
+        # game_screen.base.dice.remove_dice(game_screen.base.dice.children)
         game_screen.base.score_area.clear_widgets()
         game_screen.base.list_o_winners.clear()
         game_screen.base.current_player = ObjectProperty()
+        game_screen.base.buttons.end_turn.disabled = False
+        game_screen.base.buttons.end_turn.color = rgba(colors['text'])
+
         if not play_again:
             game_screen.base.active_game = ObjectProperty()
             game_screen.base.list_o_players.clear()
