@@ -767,6 +767,7 @@ class ResultsScreen(Screen):
         if game_screen.base.info.children[0].id == 'indi':
             game_screen.base.info.remove_widget(game_screen.base.info.children[0])
 
+        game_screen.base.dice.remove_dice(game_screen.base.dice.children)
         game_screen.base.score_area.clear_widgets()
         game_screen.base.list_o_winners.clear()
         game_screen.base.current_player = ObjectProperty()
